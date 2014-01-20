@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/aktau/gofinance/fquery"
 	"github.com/aktau/gofinance/yahoofinance"
+	"math"
 )
 
 func main() {
@@ -46,8 +47,13 @@ func calc(src fquery.Source) {
 		return
 	}
 
+	desiredTxCostPerc := 0.01
+	txCost := 9.75
+
 	fmt.Println()
 	for _, r := range res {
+		nrOfShaderForTxCostPerc := sharesToBuy(r.Ask, txCost, desiredTxCostPerc)
+
 		fmt.Printf("name: %v (%v)\n", r.Name, r.Symbol)
 		fmt.Printf("bid/ask: %v/%v (spread: %v)\n", r.Bid, r.Ask, r.Ask-r.Bid)
 		fmt.Printf("day low/high: %v/%v\n", r.DayRange.Low, r.DayRange.High)
@@ -57,6 +63,16 @@ func calc(src fquery.Source) {
 			r.PreviousClose, r.Open, r.LastTradePrice)
 		fmt.Printf("dividend ex: %v, yield: %v, per share: %v\n",
 			r.Dividend.ExDate, r.Dividend.Yield, r.Dividend.PerShare)
+		fmt.Printf("You would need to buy %v (€ %v) shares of this stock to reach a transaction cost below %v%%\n",
+			nrOfShaderForTxCostPerc, nrOfShaderForTxCostPerc*r.Ask, desiredTxCostPerc*100)
 		fmt.Println("======================")
 	}
+}
+
+/* gives you the number of shares to buy if you want
+ * the transaction cost to be less than a certain percentage
+ * (0.5% is fantastic, 1% is ok, for example) */
+func sharesToBuy(price, txCost, desiredTxCostPerc float64) float64 {
+	return math.Ceil((txCost - desiredTxCostPerc*txCost) /
+		(desiredTxCostPerc * price))
 }
