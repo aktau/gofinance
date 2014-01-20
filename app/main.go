@@ -11,6 +11,31 @@ func main() {
 
 	s := &yahoofinance.Source{}
 	calc(s)
+	// hist(s)
+}
+
+func hist(src fquery.Source) {
+	res, err := src.Hist([]string{"VEUR.AS"})
+	if err != nil {
+		fmt.Println("gofinance: could not fetch history, ", err)
+	}
+
+	for symb, hist := range res {
+		fmt.Println(symb)
+		fmt.Println("===========")
+		fmt.Println("Length:", len(hist.Entries))
+		for _, row := range hist.Entries {
+			fmt.Println("row:", row)
+		}
+	}
+
+	/* with time limits */
+	// start := time.Date(2009, time.November, 1, 0, 0, 0, 0, time.UTC)
+	// end := time.Date(2011, time.November, 1, 0, 0, 0, 0, time.UTC)
+	// _, err = src.HistLimit([]string{"AAPL", "VEUR.AS", "VJPN.AS"}, start, end)
+	// if err != nil {
+	// 	fmt.Println("gofinance: could not fetch history, ", err)
+	// }
 }
 
 func calc(src fquery.Source) {

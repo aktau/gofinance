@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/aktau/gofinance/fquery"
+	"github.com/aktau/gofinance/util"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -16,7 +17,7 @@ const (
 	PublicApiUrl        = "http://query.yahooapis.com/v1/public/yql"
 	DatatablesUrl       = "store://datatables.org/alltableswithkeys"
 	ChartUrl            = "http://chart.finance.yahoo.com/z?s=AAPL&t=6m&q=l&l=on&z=s&p=m50,m200"
-	HistoricalUrl       = "http://ichart.finance.yahoo.com/table.csv?s=%s&c=%s"
+	HistoricalUrl       = "http://ichart.finance.yahoo.com/table.csv"
 	TimeShortFormat     = "Jan 02"
 	TimeYearShortFormat = "Jan 02 2006"
 )
@@ -34,27 +35,6 @@ type Source struct{}
 type Tables struct {
 	Quotes     string
 	QuotesList string
-}
-
-type ShortTime time.Time
-
-func (jt *ShortTime) UnmarshalJSON(data []byte) error {
-	var s string
-	if err := json.Unmarshal(data, &s); err != nil {
-		return err
-	}
-
-	t, err := time.Parse(TimeShortFormat, s)
-	if err != nil {
-		return err
-	}
-
-	*jt = (ShortTime)(t)
-	return nil
-}
-
-func (jt ShortTime) GetTime() time.Time {
-	return (time.Time)(jt)
 }
 
 type YqlJsonQuote struct {
@@ -77,22 +57,53 @@ type YqlJsonQuote struct {
 	DaysRangeRaw string  `json:"DaysRange"`
 	YearRangeRaw string  `json:"YearRange"`
 
-	ExDividendDate *ShortTime `json:"ExDividendDate"`
+	ExDividendDate *util.MonthDay `json:"ExDividendDate"`
 }
 
-type YqlJsonResults struct {
+type YqlJsonQuoteResult struct {
 	Quote []YqlJsonQuote `json:"quote"`
 }
 
-type YqlJsonQuery struct {
-	Count   int
-	Created time.Time
-	Lang    string
-	Results YqlJsonResults
+// type YqlJsonHistRow struct {
+// 	Date     time.Time `json:"Date"`
+// 	Open     float64   `json:"Open,string"`
+// 	Close    float64   `json:"Close,string"`
+// 	AdjClose float64   `json:"AdjClose,string"`
+// 	High     float64   `json:"High,string"`
+// 	Low      float64   `json:"Low,string"`
+// 	Volume   int64     `json:"Volume,string"`
+// }
+
+type YqlJsonHistResult struct {
+	Rows []fquery.HistEntry `json:"quote"`
 }
 
-type YqlJsonResponse struct {
-	Query YqlJsonQuery `json:"query"`
+type YqlJsonMeta struct {
+	Count   int       `json:"count"`
+	Created time.Time `json:"created"`
+	Lang    string    `json:"lang"`
+}
+
+type YqlJsonQuoteQuery struct {
+	Count   int                `json:"count"`
+	Created time.Time          `json:"created"`
+	Lang    string             `json:"lang"`
+	Results YqlJsonQuoteResult `json:"results"`
+}
+
+type YqlJsonQuoteResponse struct {
+	Query YqlJsonQuoteQuery `json:"query"`
+}
+
+type YqlJsonHistQuery struct {
+	Count   int               `json:"count"`
+	Created time.Time         `json:"created"`
+	Lang    string            `json:"lang"`
+	Results YqlJsonHistResult `json:"results"`
+}
+
+type YqlJsonHistResponse struct {
+	Query YqlJsonHistQuery `json:"query"`
 }
 
 func (s *Source) Fetch(symbols []string) ([]fquery.Result, error) {
@@ -102,7 +113,6 @@ func (s *Source) Fetch(symbols []string) ([]fquery.Result, error) {
 	query := fmt.Sprintf(`SELECT * FROM %s WHERE symbol IN (%s)`,
 		YahooTables.Quotes, strings.Join(quotedSymbols, ","))
 
-	fmt.Println("yahoo-finance: query = ", query)
 	raw, err := Yql(query)
 	if err != nil {
 		return nil, err
@@ -110,7 +120,7 @@ func (s *Source) Fetch(symbols []string) ([]fquery.Result, error) {
 
 	fmt.Print(string(raw))
 
-	var resp YqlJsonResponse
+	var resp YqlJsonQuoteResponse
 	err = json.Unmarshal(raw, &resp)
 	if err != nil {
 		return nil, err
@@ -139,27 +149,107 @@ func (s *Source) Fetch(symbols []string) ([]fquery.Result, error) {
 		results = append(results, res)
 	}
 
-	// return nil, fmt.Errorf(fquery.ErrTplNotSupported, s.String(), "fetch")
 	return results, nil
 }
 
-/* Retrieves historical stock data for the provided symbol.
- * Historical data includes date, open, close, high, low, volume
- * and adjusted close. */
-func (s *Source) Hist(symbols []string, start time.Time, end time.Time) ([][]fquery.Historical, error) {
-	/* could alternatively query from yahoo.finance.historicaldata
-	 * e.g.: http://query.yahooapis.com/v1/public/yql?q=select%20*%20from%20yahoo.finance.historical */
-	for _, symbol := range symbols {
-		startYear := ""
-		csv := fmt.Sprintf(HistoricalUrl, symbol, startYear)
-		query := `SELECT *
-				  FROM   csv
-				  WHERE  url='%s'
-				  AND    columns="Date,Open,High,Low,Close,Volume,AdjClose"`
-		Yql(fmt.Sprintf(query, csv))
+func (s *Source) Hist(symbols []string) (map[string]fquery.Hist, error) {
+	return hist(symbols, nil, nil)
+}
+
+func (s *Source) HistLimit(symbols []string, start time.Time, end time.Time) (map[string]fquery.Hist, error) {
+	return hist(symbols, &start, &end)
+}
+
+func hist(symbols []string, start *time.Time, end *time.Time) (map[string]fquery.Hist, error) {
+	if start == nil {
+		t := time.Date(1900, time.January, 1, 0, 0, 0, 0, time.UTC)
+		start = &t
 	}
 
-	return nil, fmt.Errorf(fquery.ErrTplNotSupported, s.String(), "history")
+	if end == nil {
+		t := time.Date(2099, time.January, 1, 0, 0, 0, 0, time.UTC)
+		end = &t
+	}
+
+	res := make(map[string]fquery.Hist)
+	for _, symbol := range symbols {
+		query := fmt.Sprintf(
+			`SELECT * FROM yahoo.finance.historicaldata WHERE symbol="%s"`,
+			symbol)
+
+		query += fmt.Sprintf(` AND startDate = "%v-%v-%v"`,
+			start.Year(), int(start.Month()), start.Day())
+		query += fmt.Sprintf(` AND endDate = "%v-%v-%v"`,
+			end.Year(), int(end.Month()), end.Day())
+
+		fmt.Println("yahoo-finance: query = ", query)
+		raw, err := Yql(query)
+		if err != nil {
+			return nil, err
+		}
+
+		fmt.Print("raw:", string(raw))
+		var resp YqlJsonHistResponse
+		err = json.Unmarshal(raw, &resp)
+		if err != nil {
+			return nil, err
+		}
+
+		fmt.Println("ROWS", resp.Query.Results.Rows)
+		fmt.Println("REST", resp.Query)
+		res[symbol] = fquery.Hist{
+			Entries: resp.Query.Results.Rows,
+		}
+	}
+
+	return res, nil
+}
+
+/* makes yql query directly from the csv-file, instead of via
+ * yahoo.financial.historicaldata */
+func pureYqlHist(symbols []string, start *time.Time, end *time.Time) (map[string]fquery.Hist, error) {
+	v := url.Values{}
+
+	if start != nil {
+		v.Set("a", strconv.Itoa(int(start.Month())-1))
+		v.Set("b", strconv.Itoa(start.Day()))
+		v.Set("c", strconv.Itoa(start.Year()))
+	}
+
+	if end != nil {
+		v.Set("d", strconv.Itoa(int(end.Month())-1))
+		v.Set("e", strconv.Itoa(end.Day()))
+		v.Set("f", strconv.Itoa(end.Year()))
+	}
+
+	res := make(map[string]fquery.Hist)
+	for _, symbol := range symbols {
+		v.Set("s", symbol)
+		csv := HistoricalUrl + "?" + v.Encode()
+		query := fmt.Sprintf(
+			`SELECT * FROM csv WHERE url='%s' AND
+			columns="Date,Open,High,Low,Close,Volume,AdjClose"`,
+			csv)
+
+		fmt.Println("yahoo-finance: query = ", query)
+		raw, err := Yql(query)
+		if err != nil {
+			return nil, err
+		}
+
+		fmt.Print("raw:", string(raw))
+		var resp YqlJsonHistResponse
+		err = json.Unmarshal(raw, &resp)
+		if err != nil {
+			return nil, err
+		}
+
+		res[symbol] = fquery.Hist{
+			Entries: resp.Query.Results.Rows,
+		}
+	}
+
+	return res, nil
 }
 
 func (s *Source) String() string {
@@ -176,7 +266,9 @@ func Yql(query string) ([]byte, error) {
 	v.Set("format", "json")
 	v.Set("env", DatatablesUrl)
 
-	resp, err := http.Get(PublicApiUrl + "?" + v.Encode())
+	url := PublicApiUrl + "?" + v.Encode()
+	fmt.Println("yql: firing HTTP GET at ", url)
+	resp, err := http.Get(url)
 	if err != nil {
 		return nil, err
 	}
