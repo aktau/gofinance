@@ -12,8 +12,8 @@ func main() {
 
 	// s := yahoofinance.NewCvs()
 	s := yahoofinance.NewYql()
-	// hist(s)
-	calc(s)
+	hist(s)
+	// calc(s)
 }
 
 func hist(src fquery.Source) {

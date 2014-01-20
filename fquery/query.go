@@ -60,6 +60,7 @@ type Result struct {
 }
 
 type Hist struct {
+	Symbol  string
 	From    time.Time
 	To      time.Time
 	Entries []HistEntry
