@@ -155,15 +155,12 @@ func yqlHist(symbols []string, start *time.Time, end *time.Time) (map[string]fqu
 			return nil, err
 		}
 
-		fmt.Print("raw:", string(raw))
 		var resp YqlJsonHistResponse
 		err = json.Unmarshal(raw, &resp)
 		if err != nil {
 			return nil, err
 		}
 
-		fmt.Println("ROWS", resp.Query.Results.Rows)
-		fmt.Println("REST", resp.Query)
 		res[symbol] = fquery.Hist{
 			Entries: resp.Query.Results.Rows,
 		}
@@ -204,7 +201,6 @@ func pureYqlHist(symbols []string, start *time.Time, end *time.Time) (map[string
 			return nil, err
 		}
 
-		fmt.Print("raw:", string(raw))
 		var resp YqlJsonHistResponse
 		err = json.Unmarshal(raw, &resp)
 		if err != nil {

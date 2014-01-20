@@ -12,12 +12,12 @@ func main() {
 
 	// s := yahoofinance.NewCvs()
 	s := yahoofinance.NewYql()
-	calc(s)
-	// hist(s)
+	hist(s)
+	// calc(s)
 }
 
 func hist(src fquery.Source) {
-	res, err := src.Hist([]string{"VEUR.AS"})
+	res, err := src.Hist([]string{"VEUR.AS", "VJPN.AS"})
 	if err != nil {
 		fmt.Println("gofinance: could not fetch history, ", err)
 	}
@@ -29,6 +29,7 @@ func hist(src fquery.Source) {
 		for _, row := range hist.Entries {
 			fmt.Println("row:", row)
 		}
+		fmt.Println("Moving average manual calc:", movingAverage(hist))
 	}
 
 	/* with time limits */
@@ -75,4 +76,23 @@ func calc(src fquery.Source) {
 func sharesToBuy(price, txCost, desiredTxCostPerc float64) float64 {
 	return math.Ceil((txCost - desiredTxCostPerc*txCost) /
 		(desiredTxCostPerc * price))
+}
+
+/* you can get the moving average for 50 and 200 days
+ * out of the standard stock quote, but if you need
+ * something else, just point it at this function */
+func movingAverage(hist fquery.Hist) float64 {
+	if len(hist.Entries) == 0 {
+		return 0
+	}
+
+	var sum float64 = 0
+	var count float64 = 0
+
+	for _, row := range hist.Entries {
+		sum += row.Close
+		count++
+	}
+
+	return sum / count
 }
