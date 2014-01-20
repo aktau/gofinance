@@ -57,40 +57,28 @@ type YqlJsonQuote struct {
 	ExDividendDate *util.MonthDay `json:"ExDividendDate"`
 }
 
-type YqlJsonQuoteResult struct {
-	Quote []YqlJsonQuote `json:"quote"`
-}
-
-type YqlJsonHistResult struct {
-	Rows []fquery.HistEntry `json:"quote"`
-}
-
 type YqlJsonMeta struct {
 	Count   int       `json:"count"`
 	Created time.Time `json:"created"`
 	Lang    string    `json:"lang"`
 }
 
-type YqlJsonQuoteQuery struct {
-	Count   int                `json:"count"`
-	Created time.Time          `json:"created"`
-	Lang    string             `json:"lang"`
-	Results YqlJsonQuoteResult `json:"results"`
-}
-
 type YqlJsonQuoteResponse struct {
-	Query YqlJsonQuoteQuery `json:"query"`
-}
-
-type YqlJsonHistQuery struct {
-	Count   int               `json:"count"`
-	Created time.Time         `json:"created"`
-	Lang    string            `json:"lang"`
-	Results YqlJsonHistResult `json:"results"`
+	Query struct {
+		YqlJsonMeta
+		Results struct {
+			Quote []YqlJsonQuote `json:"quote"`
+		}
+	}
 }
 
 type YqlJsonHistResponse struct {
-	Query YqlJsonHistQuery `json:"query"`
+	Query struct {
+		YqlJsonMeta
+		Results struct {
+			Rows []fquery.HistEntry `json:"quote"`
+		}
+	}
 }
 
 func yqlQuotes(symbols []string) ([]fquery.Result, error) {
