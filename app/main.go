@@ -12,8 +12,8 @@ func main() {
 
 	// s := yahoofinance.NewCvs()
 	s := yahoofinance.NewYql()
-	hist(s)
-	// calc(s)
+	// hist(s)
+	calc(s)
 }
 
 func hist(src fquery.Source) {
@@ -66,6 +66,12 @@ func calc(src fquery.Source) {
 			r.Dividend.ExDate, r.Dividend.Yield, r.Dividend.PerShare)
 		fmt.Printf("You would need to buy %v (€ %v) shares of this stock to reach a transaction cost below %v%%\n",
 			nrOfShaderForTxCostPerc, nrOfShaderForTxCostPerc*r.Ask, desiredTxCostPerc*100)
+		fmt.Print("Richie Rich thinks this is in a ")
+		if wouldRichieRichBuy(r) {
+			fmt.Println("BUY position")
+		} else {
+			fmt.Println("SELL position")
+		}
 		fmt.Println("======================")
 	}
 }
@@ -95,4 +101,8 @@ func movingAverage(hist fquery.Hist) float64 {
 	}
 
 	return sum / count
+}
+
+func wouldRichieRichBuy(res fquery.Result) bool {
+	return res.PreviousClose > res.Ma200
 }
