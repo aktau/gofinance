@@ -21,8 +21,9 @@ type Range struct {
 }
 
 type Dividend struct {
-	Yield  float64
-	ExDate time.Time
+	Yield    float64
+	PerShare float64
+	ExDate   time.Time
 }
 
 type Result struct {

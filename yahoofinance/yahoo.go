@@ -1,6 +1,7 @@
 package yahoofinance
 
 import (
+	"fmt"
 	"github.com/aktau/gofinance/fquery"
 	"strconv"
 	"strings"
@@ -8,26 +9,35 @@ import (
 )
 
 const (
-	// PublicApiUrl        = "http://query.yahooapis.com/v1/public/yql"
-	// DatatablesUrl       = "store://datatables.org/alltableswithkeys"
-	// ChartUrl            = "http://chart.finance.yahoo.com/z?s=AAPL&t=6m&q=l&l=on&z=s&p=m50,m200"
 	HistoricalUrl = "http://ichart.finance.yahoo.com/table.csv"
-	// TimeShortFormat     = "Jan 02"
-	// TimeYearShortFormat = "Jan 02 2006"
 )
 
-// var (
-// 	year        = time.Now().Format("2006")
-// 	YahooTables = Tables{
-// 		Quotes:     "yahoo.finance.quotes",
-// 		QuotesList: "yahoo.finance.quoteslist",
-// 	}
-// )
+const (
+	TypeCsv = iota
+	TypeYql
+)
 
-type Source struct{}
+type Source struct {
+	srcType int
+}
+
+func NewCvs() fquery.Source {
+	return &Source{srcType: TypeCsv}
+}
+
+func NewYql() fquery.Source {
+	return &Source{srcType: TypeYql}
+}
 
 func (s *Source) Fetch(symbols []string) ([]fquery.Result, error) {
-	return yqlQuotes(symbols)
+	switch s.srcType {
+	case TypeCsv:
+		return csvQuotes(symbols)
+	case TypeYql:
+		return yqlQuotes(symbols)
+	}
+
+	return nil, fmt.Errorf("yahoo finance: unknown backend type: %v", s.srcType)
 }
 
 func (s *Source) Hist(symbols []string) (map[string]fquery.Hist, error) {

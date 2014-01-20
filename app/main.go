@@ -9,7 +9,8 @@ import (
 func main() {
 	fmt.Printf("welcome to gofinance %v.%v.%v\n", MAJ_VERSION, MIN_VERSION, MIC_VERSION)
 
-	s := &yahoofinance.Source{}
+	// s := yahoofinance.NewCvs()
+	s := yahoofinance.NewYql()
 	calc(s)
 	// hist(s)
 }
@@ -54,7 +55,8 @@ func calc(src fquery.Source) {
 		fmt.Printf("moving avg. 50/200: %v/%v\n", r.Ma50, r.Ma200)
 		fmt.Printf("prevclose/open/lasttrade: %v/%v/%v\n",
 			r.PreviousClose, r.Open, r.LastTradePrice)
-		fmt.Printf("dividend ex: %v\n", r.Dividend.ExDate)
+		fmt.Printf("dividend ex: %v, yield: %v, per share: %v\n",
+			r.Dividend.ExDate, r.Dividend.Yield, r.Dividend.PerShare)
 		fmt.Println("======================")
 	}
 }
