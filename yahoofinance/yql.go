@@ -351,7 +351,6 @@ func Yql(query string) ([]byte, error) {
 	v.Set("env", DatatablesUrl)
 
 	url := PublicApiUrl + "?" + v.Encode()
-	fmt.Println("yql: firing HTTP GET at ", url)
 	resp, err := http.Get(url)
 	if err != nil {
 		return nil, err
