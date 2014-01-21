@@ -80,7 +80,14 @@ func calc(src fquery.Source) {
 		nrOfShaderForTxCostPerc := sharesToBuy(r.Ask, txCost, desiredTxCostPerc)
 		bidAskSpreadPerc := (r.Ask - r.Bid) / r.Bid
 
-		fmt.Printf("name: %v (%v)\n", r.Name, r.Symbol)
+		upDir := r.LastTradePrice >= r.PreviousClose
+		upVal := r.LastTradePrice - r.PreviousClose
+		upPerc := upVal / r.PreviousClose * 100
+		fmt.Printf("name: %v (%v), %v %v %v\n",
+			r.Name, r.Symbol,
+			binary(fmt.Sprintf("%+.2f", upVal), upDir),
+			binary(fmt.Sprintf("%+.2f%%", upPerc), upDir),
+			binary(arrow(upDir), upDir))
 		bidAskPrint := binary(fmt.Sprintf("%.3f%%", bidAskSpreadPerc*100), bidAskSpreadPerc < maxBidAskSpreadPerc)
 		terminal.Stdout.Colorf("bid/ask: @m%v@|/@m%v@|, spread: @m%.3f@| (%v)\n", r.Bid, r.Ask, r.Ask-r.Bid, bidAskPrint)
 		if bidAskSpreadPerc < maxBidAskSpreadPerc {
@@ -88,13 +95,13 @@ func calc(src fquery.Source) {
 		} else {
 			fmt.Println(red("be cautious, the spread of this stock is rather high"))
 		}
+		terminal.Stdout.Colorf("prevclose/open/lasttrade: @{m}%v@{|}/@{m}%v@{|}/@{m}%v@{|}\n",
+			r.PreviousClose, r.Open, r.LastTradePrice)
 		terminal.Stdout.Colorf("day low/high: @{m}%v@{|}/@{m}%v@{|}\n", r.DayRange.Low, r.DayRange.High)
 		terminal.Stdout.Colorf("year low/high: @{m}%v@{|}/@{m}%v@{|}\n", r.YearRange.Low, r.YearRange.High)
 		terminal.Stdout.Colorf("moving avg. 50/200: @{m}%v@{|}/@{m}%v@{|}\n", r.Ma50, r.Ma200)
-		terminal.Stdout.Colorf("prevclose/open/lasttrade: @{m}%v@{|}/@{m}%v@{|}/@{m}%v@{|}\n",
-			r.PreviousClose, r.Open, r.LastTradePrice)
-		terminal.Stdout.Colorf("dividend ex: @{m}%v@{|}, yield: @{m}%v@{|}, per share: @{m}%v@{|}\n",
-			r.Dividend.ExDate, r.Dividend.Yield, r.Dividend.PerShare)
+		terminal.Stdout.Colorf("last ex-dividend: @{m}%v@{|}, yield: @{m}%v@{|}, per share: @{m}%v@{|}\n",
+			r.Dividend.ExDate.Format("02/01"), r.Dividend.Yield, r.Dividend.PerShare)
 		terminal.Stdout.Colorf("You would need to buy @{m}%v@{|} (€ @{m}%.2f@{|}) shares of this stock to reach a transaction cost below %v%%\n",
 			nrOfShaderForTxCostPerc, nrOfShaderForTxCostPerc*r.Ask, desiredTxCostPerc*100)
 		fmt.Print("Richie Rich thinks this is in a ")
@@ -155,4 +162,12 @@ func green(format string, a ...interface{}) string {
 
 func red(format string, a ...interface{}) string {
 	return color.Sprintf("@r"+format, a...)
+}
+
+func arrow(decision bool) string {
+	if decision {
+		return "↑"
+	} else {
+		return "↓"
+	}
 }
