@@ -72,6 +72,10 @@ type YqlJsonQuoteResponse struct {
 	}
 }
 
+type histResult interface {
+	Entries() []fquery.HistEntry
+}
+
 type YqlJsonHistResponse struct {
 	Query struct {
 		YqlJsonMeta
@@ -98,6 +102,23 @@ func (r *YqlJsonPureHistResponse) Entries() []fquery.HistEntry {
 	return r.Query.Results.Rows
 }
 
+type respDividendHistory struct {
+	Query struct {
+		YqlJsonMeta
+		Results struct {
+			Rows []fquery.DividendEntry `json:"row"`
+		}
+	}
+}
+
+type divHistResult interface {
+	Entries() []fquery.DividendEntry
+}
+
+func (r *respDividendHistory) Entries() []fquery.DividendEntry {
+	return r.Query.Results.Rows
+}
+
 func yqlQuotes(symbols []string) ([]fquery.Result, error) {
 	quotedSymbols := stringMap(func(s string) string {
 		return `"` + s + `"`
@@ -109,8 +130,6 @@ func yqlQuotes(symbols []string) ([]fquery.Result, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	fmt.Print(string(raw))
 
 	var resp YqlJsonQuoteResponse
 	err = json.Unmarshal(raw, &resp)
@@ -165,12 +184,64 @@ func yqlHist(symbols []string, start *time.Time, end *time.Time) (map[string]fqu
 			symbol) + startq + endq
 	}
 
-	makeMarshal := func() histResult {
+	makeMarshal := func() interface{} {
 		var resp YqlJsonHistResponse
 		return &resp
 	}
 
-	return parallelHistFetch(queryGen, makeMarshal, symbols), nil
+	res := make(map[string]fquery.Hist)
+
+	parallelFetch(queryGen, makeMarshal, addHistToMap(res), symbols)
+	return res, nil
+}
+
+func yqlDivHist(symbols []string, start *time.Time, end *time.Time) (map[string]fquery.DividendHist, error) {
+	v := url.Values{}
+
+	if start != nil {
+		v.Set("a", strconv.Itoa(int(start.Month())-1))
+		v.Set("b", strconv.Itoa(start.Day()))
+		v.Set("c", strconv.Itoa(start.Year()))
+	}
+
+	if end != nil {
+		v.Set("d", strconv.Itoa(int(end.Month())-1))
+		v.Set("e", strconv.Itoa(end.Day()))
+		v.Set("f", strconv.Itoa(end.Year()))
+	}
+
+	/* ask for the dividend history */
+	v.Set("g", "v")
+
+	queryGen := func(symbol string) string {
+		/* make a copy of the url parameters since we're going to be
+		 * modifying it and this will run in parallel */
+		params := v
+		params.Set("s", symbol)
+		csv := HistoricalUrl + "?" + params.Encode()
+		return fmt.Sprintf(
+			`SELECT * FROM csv(2,0) WHERE url='%s' AND
+			columns="Date,Dividends"`, csv)
+	}
+
+	makeMarshal := func() interface{} {
+		var resp respDividendHistory
+		return &resp
+	}
+
+	res := make(map[string]fquery.DividendHist)
+	/* add will be called serially, so no need for synchronizing */
+	add := func(work workPair) {
+		if w, ok := work.Result.(divHistResult); ok {
+			res[work.Symbol] = fquery.DividendHist{
+				Symbol:    work.Symbol,
+				Dividends: w.Entries(),
+			}
+		}
+	}
+
+	parallelFetch(queryGen, makeMarshal, add, symbols)
+	return res, nil
 }
 
 /* makes yql query directly from the csv-file, instead of via
@@ -202,22 +273,36 @@ func pureYqlHist(symbols []string, start *time.Time, end *time.Time) (map[string
 			csv)
 	}
 
-	makeMarshal := func() histResult {
+	makeMarshal := func() interface{} {
 		var resp YqlJsonPureHistResponse
 		return &resp
 	}
 
-	return parallelHistFetch(queryGen, makeMarshal, symbols), nil
-}
-
-type histResult interface {
-	Entries() []fquery.HistEntry
-}
-
-func parallelHistFetch(queryGen func(string) string, makeUnmarshal func() histResult, symbols []string) map[string]fquery.Hist {
 	res := make(map[string]fquery.Hist)
+	parallelFetch(queryGen, makeMarshal, addHistToMap(res), symbols)
+	return res, nil
+}
 
-	results := make(chan fquery.Hist, len(symbols))
+func addHistToMap(m map[string]fquery.Hist) func(workPair) {
+	return func(work workPair) {
+		/* ugh, no generics, at least I could keep it to the parts that
+		 * aren't going to happen much */
+		if w, ok := work.Result.(histResult); ok {
+			m[work.Symbol] = fquery.Hist{
+				Symbol:  work.Symbol,
+				Entries: w.Entries(),
+			}
+		}
+	}
+}
+
+type workPair struct {
+	Symbol string
+	Result interface{}
+}
+
+func parallelFetch(queryGen func(string) string, makeUnmarshal func() interface{}, add func(workPair), symbols []string) {
+	results := make(chan workPair, len(symbols))
 	errors := make(chan error, len(symbols))
 
 	for _, symbol := range symbols {
@@ -225,14 +310,11 @@ func parallelHistFetch(queryGen func(string) string, makeUnmarshal func() histRe
 			query := queryGen(symbol)
 			resp := makeUnmarshal()
 
-			err := histFetchAndUnmarshall(query, resp)
+			err := fetchAndUnmarshall(query, resp)
 			if err != nil {
 				errors <- err
 			} else {
-				results <- fquery.Hist{
-					Entries: resp.Entries(),
-					Symbol:  symbol,
-				}
+				results <- workPair{symbol, resp}
 			}
 		}(symbol)
 	}
@@ -240,16 +322,14 @@ func parallelHistFetch(queryGen func(string) string, makeUnmarshal func() histRe
 	for i := 0; i < len(symbols); i++ {
 		select {
 		case err := <-errors:
-			fmt.Println("yql: error while fetching history,", err)
+			fmt.Println("yql: error while fetching,", err)
 		case r := <-results:
-			res[r.Symbol] = r
+			add(r)
 		}
 	}
-
-	return res
 }
 
-func histFetchAndUnmarshall(query string, target histResult) error {
+func fetchAndUnmarshall(query string, target interface{}) error {
 	fmt.Println("yahoo-finance: query = ", query)
 	raw, err := Yql(query)
 	if err != nil {

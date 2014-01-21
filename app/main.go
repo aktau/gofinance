@@ -12,8 +12,28 @@ func main() {
 
 	// s := yahoofinance.NewCvs()
 	s := yahoofinance.NewYql()
+	divhist(s)
 	hist(s)
 	calc(s)
+}
+
+func divhist(src fquery.Source) {
+	res, err := src.DividendHist([]string{"VEUR.AS", "VJPN.AS"})
+	if err != nil {
+		fmt.Println("gofinance: could not fetch history, ", err)
+		return
+	}
+
+	fmt.Printf("succesfully fetched %v symbols' dividend history\n", len(res))
+
+	for symb, hist := range res {
+		fmt.Println(symb)
+		fmt.Println("===========")
+		fmt.Println("Length:", len(hist.Dividends))
+		for _, row := range hist.Dividends {
+			fmt.Println("row:", row)
+		}
+	}
 }
 
 func hist(src fquery.Source) {

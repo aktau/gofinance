@@ -48,6 +48,14 @@ func (s *Source) HistLimit(symbols []string, start time.Time, end time.Time) (ma
 	return yqlHist(symbols, &start, &end)
 }
 
+func (s *Source) DividendHist(symbols []string) (map[string]fquery.DividendHist, error) {
+	return yqlDivHist(symbols, nil, nil)
+}
+
+func (s *Source) DividendHistLimit(symbols []string, start time.Time, end time.Time) (map[string]fquery.DividendHist, error) {
+	return yqlDivHist(symbols, &start, &end)
+}
+
 func (s *Source) String() string {
 	return "Yahoo Finance"
 }

@@ -66,6 +66,16 @@ type Hist struct {
 	Entries []HistEntry
 }
 
+type DividendHist struct {
+	Symbol    string
+	Dividends []DividendEntry
+}
+
+type DividendEntry struct {
+	Date      util.YearMonthDay
+	Dividends float64 `json:",string"`
+}
+
 type HistEntry struct {
 	Date     util.YearMonthDay `json:"Date"`
 	Open     float64           `json:"Open,string"`
@@ -78,8 +88,12 @@ type HistEntry struct {
 
 type Source interface {
 	Fetch(tickers []string) ([]Result, error)
+
 	Hist(tickers []string) (map[string]Hist, error)
 	HistLimit(tickers []string, start time.Time, end time.Time) (map[string]Hist, error)
+
+	DividendHist(tickers []string) (map[string]DividendHist, error)
+	DividendHistLimit(tickers []string, start time.Time, end time.Time) (map[string]DividendHist, error)
 
 	/* CompanyToTicker(company string, prefExchange string) string */
 
