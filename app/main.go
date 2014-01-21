@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"github.com/aktau/gofinance/fquery"
 	"github.com/aktau/gofinance/yahoofinance"
+	"github.com/wsxiaoys/terminal"
+	"github.com/wsxiaoys/terminal/color"
 	"math"
 )
 
@@ -12,8 +14,8 @@ func main() {
 
 	// s := yahoofinance.NewCvs()
 	s := yahoofinance.NewYql()
-	divhist(s)
-	hist(s)
+	// divhist(s)
+	// hist(s)
 	calc(s)
 }
 
@@ -71,28 +73,37 @@ func calc(src fquery.Source) {
 
 	desiredTxCostPerc := 0.01
 	txCost := 9.75
+	maxBidAskSpreadPerc := 0.01
 
 	fmt.Println()
 	for _, r := range res {
 		nrOfShaderForTxCostPerc := sharesToBuy(r.Ask, txCost, desiredTxCostPerc)
+		bidAskSpreadPerc := (r.Ask - r.Bid) / r.Bid
 
 		fmt.Printf("name: %v (%v)\n", r.Name, r.Symbol)
-		fmt.Printf("bid/ask: %v/%v (spread: %v)\n", r.Bid, r.Ask, r.Ask-r.Bid)
-		fmt.Printf("day low/high: %v/%v\n", r.DayRange.Low, r.DayRange.High)
-		fmt.Printf("year low/high: %v/%v\n", r.YearRange.Low, r.YearRange.High)
-		fmt.Printf("moving avg. 50/200: %v/%v\n", r.Ma50, r.Ma200)
-		fmt.Printf("prevclose/open/lasttrade: %v/%v/%v\n",
+		bidAskPrint := binary(fmt.Sprintf("%.3f%%", bidAskSpreadPerc*100), bidAskSpreadPerc < maxBidAskSpreadPerc)
+		terminal.Stdout.Colorf("bid/ask: @m%v@|/@m%v@|, spread: @m%.3f@| (%v)\n", r.Bid, r.Ask, r.Ask-r.Bid, bidAskPrint)
+		if bidAskSpreadPerc < maxBidAskSpreadPerc {
+			fmt.Printf("if you want to buy this stock, place a %v at about %v\n", green("limit order"), green("%.2f", (r.Ask+r.Bid)/2))
+		} else {
+			fmt.Println(red("be cautious, the spread of this stock is rather high"))
+		}
+		terminal.Stdout.Colorf("day low/high: @{m}%v@{|}/@{m}%v@{|}\n", r.DayRange.Low, r.DayRange.High)
+		terminal.Stdout.Colorf("year low/high: @{m}%v@{|}/@{m}%v@{|}\n", r.YearRange.Low, r.YearRange.High)
+		terminal.Stdout.Colorf("moving avg. 50/200: @{m}%v@{|}/@{m}%v@{|}\n", r.Ma50, r.Ma200)
+		terminal.Stdout.Colorf("prevclose/open/lasttrade: @{m}%v@{|}/@{m}%v@{|}/@{m}%v@{|}\n",
 			r.PreviousClose, r.Open, r.LastTradePrice)
-		fmt.Printf("dividend ex: %v, yield: %v, per share: %v\n",
+		terminal.Stdout.Colorf("dividend ex: @{m}%v@{|}, yield: @{m}%v@{|}, per share: @{m}%v@{|}\n",
 			r.Dividend.ExDate, r.Dividend.Yield, r.Dividend.PerShare)
-		fmt.Printf("You would need to buy %v (€ %v) shares of this stock to reach a transaction cost below %v%%\n",
+		terminal.Stdout.Colorf("You would need to buy @{m}%v@{|} (€ @{m}%.2f@{|}) shares of this stock to reach a transaction cost below %v%%\n",
 			nrOfShaderForTxCostPerc, nrOfShaderForTxCostPerc*r.Ask, desiredTxCostPerc*100)
 		fmt.Print("Richie Rich thinks this is in a ")
 		if wouldRichieRichBuy(r) {
-			fmt.Println("BUY position")
+			terminal.Stdout.Colorf("@{g}BUY@{|}")
 		} else {
-			fmt.Println("SELL position")
+			terminal.Stdout.Colorf("@{r}SELL@{|}")
 		}
+		fmt.Println(" position")
 		fmt.Println("======================")
 	}
 }
@@ -126,4 +137,22 @@ func movingAverage(hist fquery.Hist) float64 {
 
 func wouldRichieRichBuy(res fquery.Result) bool {
 	return res.PreviousClose > res.Ma200
+}
+
+/* prints either green or red text to the screen, depending
+ * on decision. */
+func binary(text string, decision bool) string {
+	col := "@g"
+	if !decision {
+		col = "@r"
+	}
+	return color.Sprint(col, text)
+}
+
+func green(format string, a ...interface{}) string {
+	return color.Sprintf("@g"+format, a...)
+}
+
+func red(format string, a ...interface{}) string {
+	return color.Sprintf("@r"+format, a...)
 }
