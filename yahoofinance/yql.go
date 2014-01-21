@@ -81,6 +81,23 @@ type YqlJsonHistResponse struct {
 	}
 }
 
+func (r *YqlJsonHistResponse) Entries() []fquery.HistEntry {
+	return r.Query.Results.Rows
+}
+
+type YqlJsonPureHistResponse struct {
+	Query struct {
+		YqlJsonMeta
+		Results struct {
+			Rows []fquery.HistEntry `json:"row"`
+		}
+	}
+}
+
+func (r *YqlJsonPureHistResponse) Entries() []fquery.HistEntry {
+	return r.Query.Results.Rows
+}
+
 func yqlQuotes(symbols []string) ([]fquery.Result, error) {
 	quotedSymbols := stringMap(func(s string) string {
 		return `"` + s + `"`
@@ -132,58 +149,32 @@ func yqlHist(symbols []string, start *time.Time, end *time.Time) (map[string]fqu
 		t := time.Date(1900, time.January, 1, 0, 0, 0, 0, time.UTC)
 		start = &t
 	}
+	startq := fmt.Sprintf(` AND startDate = "%v-%v-%v"`,
+		start.Year(), int(start.Month()), start.Day())
 
 	if end == nil {
 		t := time.Date(2099, time.January, 1, 0, 0, 0, 0, time.UTC)
 		end = &t
 	}
+	endq := fmt.Sprintf(` AND endDate = "%v-%v-%v"`,
+		end.Year(), int(end.Month()), end.Day())
 
-	res := make(map[string]fquery.Hist)
-	results := make(chan fquery.Hist, len(symbols))
-	errors := make(chan error, len(symbols))
-	for _, symbol := range symbols {
-		go func(symbol string) {
-			query := fmt.Sprintf(
-				`SELECT * FROM yahoo.finance.historicaldata WHERE symbol="%s"`,
-				symbol)
-
-			query += fmt.Sprintf(` AND startDate = "%v-%v-%v"`,
-				start.Year(), int(start.Month()), start.Day())
-			query += fmt.Sprintf(` AND endDate = "%v-%v-%v"`,
-				end.Year(), int(end.Month()), end.Day())
-
-			fmt.Println("yahoo-finance: query = ", query)
-			raw, err := Yql(query)
-			if err != nil {
-				errors <- err
-				return
-			}
-
-			var resp YqlJsonHistResponse
-			err = json.Unmarshal(raw, &resp)
-			if err != nil {
-				errors <- err
-				return
-			}
-
-			results <- fquery.Hist{Symbol: symbol, Entries: resp.Query.Results.Rows}
-		}(symbol)
+	queryGen := func(symbol string) string {
+		return fmt.Sprintf(
+			`SELECT * FROM yahoo.finance.historicaldata WHERE symbol="%s"`,
+			symbol) + startq + endq
 	}
 
-	for i := 0; i < len(symbols); i++ {
-		select {
-		case err := <-errors:
-			fmt.Println("yql: error while fetching history,", err)
-		case r := <-results:
-			res[r.Symbol] = r
-		}
+	makeMarshal := func() histResult {
+		var resp YqlJsonHistResponse
+		return &resp
 	}
 
-	return res, nil
+	return parallelHistFetch(queryGen, makeMarshal, symbols), nil
 }
 
 /* makes yql query directly from the csv-file, instead of via
- * yahoo.financial.historicaldata */
+ * the yahoo.financial.historicaldata predefined table */
 func pureYqlHist(symbols []string, start *time.Time, end *time.Time) (map[string]fquery.Hist, error) {
 	v := url.Values{}
 
@@ -199,33 +190,78 @@ func pureYqlHist(symbols []string, start *time.Time, end *time.Time) (map[string
 		v.Set("f", strconv.Itoa(end.Year()))
 	}
 
-	res := make(map[string]fquery.Hist)
-	for _, symbol := range symbols {
-		v.Set("s", symbol)
-		csv := HistoricalUrl + "?" + v.Encode()
-		query := fmt.Sprintf(
-			`SELECT * FROM csv WHERE url='%s' AND
+	queryGen := func(symbol string) string {
+		/* make a copy of the url parameters since we're going to be
+		 * modifying it and this will run in parallel */
+		params := v
+		params.Set("s", symbol)
+		csv := HistoricalUrl + "?" + params.Encode()
+		return fmt.Sprintf(
+			`SELECT * FROM csv(2,0) WHERE url='%s' AND
 			columns="Date,Open,High,Low,Close,Volume,AdjClose"`,
 			csv)
+	}
 
-		fmt.Println("yahoo-finance: query = ", query)
-		raw, err := Yql(query)
-		if err != nil {
-			return nil, err
-		}
+	makeMarshal := func() histResult {
+		var resp YqlJsonPureHistResponse
+		return &resp
+	}
 
-		var resp YqlJsonHistResponse
-		err = json.Unmarshal(raw, &resp)
-		if err != nil {
-			return nil, err
-		}
+	return parallelHistFetch(queryGen, makeMarshal, symbols), nil
+}
 
-		res[symbol] = fquery.Hist{
-			Entries: resp.Query.Results.Rows,
+type histResult interface {
+	Entries() []fquery.HistEntry
+}
+
+func parallelHistFetch(queryGen func(string) string, makeUnmarshal func() histResult, symbols []string) map[string]fquery.Hist {
+	res := make(map[string]fquery.Hist)
+
+	results := make(chan fquery.Hist, len(symbols))
+	errors := make(chan error, len(symbols))
+
+	for _, symbol := range symbols {
+		go func(symbol string) {
+			query := queryGen(symbol)
+			resp := makeUnmarshal()
+
+			err := histFetchAndUnmarshall(query, resp)
+			if err != nil {
+				errors <- err
+			} else {
+				results <- fquery.Hist{
+					Entries: resp.Entries(),
+					Symbol:  symbol,
+				}
+			}
+		}(symbol)
+	}
+
+	for i := 0; i < len(symbols); i++ {
+		select {
+		case err := <-errors:
+			fmt.Println("yql: error while fetching history,", err)
+		case r := <-results:
+			res[r.Symbol] = r
 		}
 	}
 
-	return res, nil
+	return res
+}
+
+func histFetchAndUnmarshall(query string, target histResult) error {
+	fmt.Println("yahoo-finance: query = ", query)
+	raw, err := Yql(query)
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal(raw, target)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func Yql(query string) ([]byte, error) {

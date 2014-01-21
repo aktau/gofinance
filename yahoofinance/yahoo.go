@@ -49,7 +49,7 @@ func (s *Source) HistLimit(symbols []string, start time.Time, end time.Time) (ma
 }
 
 func (s *Source) String() string {
-	return "Yahoo Finance (YQL)"
+	return "Yahoo Finance"
 }
 
 /* completes data */

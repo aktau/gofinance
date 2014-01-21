@@ -13,13 +13,14 @@ func main() {
 	// s := yahoofinance.NewCvs()
 	s := yahoofinance.NewYql()
 	hist(s)
-	// calc(s)
+	calc(s)
 }
 
 func hist(src fquery.Source) {
 	res, err := src.Hist([]string{"VEUR.AS", "VJPN.AS"})
 	if err != nil {
 		fmt.Println("gofinance: could not fetch history, ", err)
+		return
 	}
 
 	for symb, hist := range res {
