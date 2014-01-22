@@ -24,10 +24,17 @@ func (r Range) Diff() float64 {
 	return r.High - r.Low
 }
 
+/* the dividend yield is a very important metric, in the absence of capital
+ * gains (the appreciation of the price of the shares), it is the only return
+ * on investment of a stock.
+ *
+ * An example, if X stock trades at $20, and Y stock trades at $40, and they
+ * both pay out a dividend of $1 per share, then X has a yield of 0.05 while
+ * Y has a yield of 0.025 */
 type Dividend struct {
-	Yield    float64
-	PerShare float64
-	ExDate   time.Time
+	PerShare float64   /* total (non-special) dividend payout / total amount of shares */
+	Yield    float64   /* annual div. per share / price per share */
+	ExDate   time.Time /* last dividend payout date */
 }
 
 type Result struct {
@@ -42,8 +49,9 @@ type Result struct {
 	Volume         int64 /* outstanding shares */
 	AvgDailyVolume int64 /* avg amount of shares traded */
 
-	/* dividend */
-	Dividend Dividend
+	/* dividend & related */
+	Dividend         Dividend
+	EarningsPerShare float64
 
 	/* price */
 	Bid            float64

@@ -14,13 +14,13 @@ func main() {
 
 	// s := yahoofinance.NewCvs()
 	s := yahoofinance.NewYql()
-	// divhist(s)
+	divhist(s)
 	// hist(s)
 	calc(s)
 }
 
 func divhist(src fquery.Source) {
-	res, err := src.DividendHist([]string{"VEUR.AS", "VJPN.AS"})
+	res, err := src.DividendHist([]string{"BELG.BR", "TNET.BR"})
 	if err != nil {
 		fmt.Println("gofinance: could not fetch history, ", err)
 		return
@@ -33,7 +33,7 @@ func divhist(src fquery.Source) {
 		fmt.Println("===========")
 		fmt.Println("Length:", len(hist.Dividends))
 		for _, row := range hist.Dividends {
-			fmt.Println("row:", row)
+			fmt.Println("row:", row.Date.GetTime().Format("02-01-2006"), row.Dividends)
 		}
 	}
 }
@@ -65,7 +65,18 @@ func hist(src fquery.Source) {
 }
 
 func calc(src fquery.Source) {
-	res, err := src.Fetch([]string{"VEUR.AS", "VJPN.AS"})
+	fmt.Println("requesting information on individual stocks...")
+	res, err := src.Fetch([]string{
+		"VEUR.AS",
+		"VJPN.AS",
+		"VHYL.AS",
+		"AAPL",
+		"APC.F",
+		// "KO",
+		"SAN.MC",
+		"BELG.BR",
+		"TNET.BR",
+	})
 	if err != nil {
 		fmt.Println("gofinance: could not fetch, ", err)
 		return
@@ -74,6 +85,7 @@ func calc(src fquery.Source) {
 	desiredTxCostPerc := 0.01
 	txCost := 9.75
 	maxBidAskSpreadPerc := 0.01
+	minDivYield := 0.025
 
 	fmt.Println()
 	for _, r := range res {
@@ -100,8 +112,10 @@ func calc(src fquery.Source) {
 		terminal.Stdout.Colorf("day low/high: @{m}%v@{|}/@{m}%v@{|} (@m%.2f@|)\n", r.DayRange.Low, r.DayRange.High, r.DayRange.Diff())
 		terminal.Stdout.Colorf("year low/high: @{m}%v@{|}/@{m}%v@{|} (@m%.2f@|)\n", r.YearRange.Low, r.YearRange.High, r.YearRange.Diff())
 		terminal.Stdout.Colorf("moving avg. 50/200: @{m}%v@{|}/@{m}%v@{|}\n", r.Ma50, r.Ma200)
-		terminal.Stdout.Colorf("last ex-dividend: @{m}%v@{|}, yield: @{m}%v@{|}, per share: @{m}%v@{|}\n",
-			r.Dividend.ExDate.Format("02/01"), r.Dividend.Yield, r.Dividend.PerShare)
+		DivYield := binary(fmt.Sprintf("%.2f%%", r.Dividend.Yield*100), r.Dividend.Yield > minDivYield)
+		fmt.Println("PURE YIELD", r.Dividend.Yield)
+		terminal.Stdout.Colorf("last ex-dividend: @{m}%v@{|}, div. per share: @{m}%v@{|}, div. yield: %v,\n earnings per share: @m%.2f@|, dividend payout ratio: @m%.2f@|\n",
+			r.Dividend.ExDate.Format("02/01"), r.Dividend.PerShare, DivYield, r.EarningsPerShare, r.Dividend.PerShare/r.EarningsPerShare)
 		terminal.Stdout.Colorf("You would need to buy @{m}%v@{|} (€ @{m}%.2f@{|}) shares of this stock to reach a transaction cost below %v%%\n",
 			nrOfShaderForTxCostPerc, nrOfShaderForTxCostPerc*r.Ask, desiredTxCostPerc*100)
 		fmt.Print("Richie Rich thinks this is in a ")

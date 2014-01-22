@@ -34,6 +34,21 @@ type Tables struct {
 	QuotesList string
 }
 
+/* this is only temporarily necessary, until the Golang authors fix bug 7064
+ * https://code.google.com/p/go/issues/detail?id=7046 */
+type nullfloat64 float64
+
+func (n *nullfloat64) UnmarshalJSON(b []byte) error {
+	if string(b) == "null" {
+		/* ignore and keep the default value */
+		return nil
+	}
+	/* yes, really ugly, get rid of the quotes and convert */
+	f, err := strconv.ParseFloat(string(b[1:len(b)-1]), 64)
+	*n = nullfloat64(f)
+	return err
+}
+
 type YqlJsonQuote struct {
 	Name   string `json:"Name"`
 	Symbol string `json:"Symbol"`
@@ -54,7 +69,22 @@ type YqlJsonQuote struct {
 	DaysRangeRaw string  `json:"DaysRange"`
 	YearRangeRaw string  `json:"YearRange"`
 
-	ExDividendDate *util.MonthDay `json:"ExDividendDate"`
+	ExDividendDate   *util.MonthDay `json:"ExDividendDate"`
+	DividendPerShare nullfloat64    `json:"DividendShare,string"`
+	EarningsPerShare nullfloat64    `json:"EarningsShare,string"`
+	DividendYield    nullfloat64    `json:"DividendYield"`
+}
+
+/* completes data */
+func (q *YqlJsonQuote) Process() {
+	/* day and year range */
+	pc := strings.Split(q.DaysRangeRaw, " - ")
+	q.DayLow, _ = strconv.ParseFloat(pc[0], 64)
+	q.DayHigh, _ = strconv.ParseFloat(pc[1], 64)
+
+	pc = strings.Split(q.YearRangeRaw, " - ")
+	q.YearLow, _ = strconv.ParseFloat(pc[0], 64)
+	q.YearHigh, _ = strconv.ParseFloat(pc[1], 64)
 }
 
 type YqlJsonMeta struct {
@@ -125,6 +155,7 @@ func yqlQuotes(symbols []string) ([]fquery.Result, error) {
 	}, symbols)
 	query := fmt.Sprintf(`SELECT * FROM %s WHERE symbol IN (%s)`,
 		YahooTables.Quotes, strings.Join(quotedSymbols, ","))
+	fmt.Println("Quotes query = ", query)
 
 	raw, err := Yql(query)
 	if err != nil {
@@ -142,20 +173,25 @@ func yqlQuotes(symbols []string) ([]fquery.Result, error) {
 		rawres.Process()
 
 		res := fquery.Result{
-			Name:           rawres.Name,
-			Symbol:         rawres.Symbol,
-			Bid:            rawres.Bid,
-			Ask:            rawres.Ask,
-			Open:           rawres.Open,
-			PreviousClose:  rawres.PreviousClose,
-			LastTradePrice: rawres.LastTradePrice,
-			Ma50:           rawres.Ma50,
-			Ma200:          rawres.Ma200,
-			DayRange:       fquery.Range{rawres.DayLow, rawres.DayHigh},
-			YearRange:      fquery.Range{rawres.YearLow, rawres.YearHigh},
+			Name:             rawres.Name,
+			Symbol:           rawres.Symbol,
+			Bid:              rawres.Bid,
+			Ask:              rawres.Ask,
+			Open:             rawres.Open,
+			PreviousClose:    rawres.PreviousClose,
+			LastTradePrice:   rawres.LastTradePrice,
+			Ma50:             rawres.Ma50,
+			Ma200:            rawres.Ma200,
+			DayRange:         fquery.Range{rawres.DayLow, rawres.DayHigh},
+			YearRange:        fquery.Range{rawres.YearLow, rawres.YearHigh},
+			EarningsPerShare: float64(rawres.EarningsPerShare),
 		}
 		if rawres.ExDividendDate != nil {
-			res.Dividend = fquery.Dividend{ExDate: rawres.ExDividendDate.GetTime()}
+			res.Dividend = fquery.Dividend{
+				PerShare: float64(rawres.DividendPerShare),
+				Yield:    float64(rawres.DividendYield) / 100,
+				ExDate:   rawres.ExDividendDate.GetTime(),
+			}
 		}
 		results = append(results, res)
 	}
