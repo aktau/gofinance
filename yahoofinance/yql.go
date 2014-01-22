@@ -34,33 +34,18 @@ type Tables struct {
 	QuotesList string
 }
 
-/* this is only temporarily necessary, until the Golang authors fix bug 7064
- * https://code.google.com/p/go/issues/detail?id=7046 */
-type nullfloat64 float64
-
-func (n *nullfloat64) UnmarshalJSON(b []byte) error {
-	if string(b) == "null" {
-		/* ignore and keep the default value */
-		return nil
-	}
-	/* yes, really ugly, get rid of the quotes and convert */
-	f, err := strconv.ParseFloat(string(b[1:len(b)-1]), 64)
-	*n = nullfloat64(f)
-	return err
-}
-
 type YqlJsonQuote struct {
 	Name   string `json:"Name"`
 	Symbol string `json:"Symbol"`
 
-	Bid            float64 `json:"Bid,string"`
-	Ask            float64 `json:"Ask,string"`
-	Open           float64 `json:"Open,string"`
-	PreviousClose  float64 `json:"PreviousClose,string"`
-	LastTradePrice float64 `json:"LastTradePriceOnly,string"`
+	Bid            util.NullFloat64 `json:"Bid"`
+	Ask            util.NullFloat64 `json:"Ask"`
+	Open           util.NullFloat64 `json:"Open"`
+	PreviousClose  util.NullFloat64 `json:"PreviousClose"`
+	LastTradePrice util.NullFloat64 `json:"LastTradePriceOnly"`
 
-	Ma50  float64 `json:"FiftydayMovingAverage,string"`
-	Ma200 float64 `json:"TwoHundreddayMovingAverage,string"`
+	Ma50  util.NullFloat64 `json:"FiftydayMovingAverage"`
+	Ma200 util.NullFloat64 `json:"TwoHundreddayMovingAverage"`
 
 	DayLow       float64 `json:"-"`
 	DayHigh      float64 `json:"-"`
@@ -69,10 +54,10 @@ type YqlJsonQuote struct {
 	DaysRangeRaw string  `json:"DaysRange"`
 	YearRangeRaw string  `json:"YearRange"`
 
-	ExDividendDate   *util.MonthDay `json:"ExDividendDate"`
-	DividendPerShare nullfloat64    `json:"DividendShare,string"`
-	EarningsPerShare nullfloat64    `json:"EarningsShare,string"`
-	DividendYield    nullfloat64    `json:"DividendYield"`
+	ExDividendDate   *util.MonthDay   `json:"ExDividendDate"`
+	DividendPerShare util.NullFloat64 `json:"DividendShare"`
+	EarningsPerShare util.NullFloat64 `json:"EarningsShare"`
+	DividendYield    util.NullFloat64 `json:"DividendYield"`
 }
 
 /* completes data */
@@ -175,13 +160,13 @@ func yqlQuotes(symbols []string) ([]fquery.Result, error) {
 		res := fquery.Result{
 			Name:             rawres.Name,
 			Symbol:           rawres.Symbol,
-			Bid:              rawres.Bid,
-			Ask:              rawres.Ask,
-			Open:             rawres.Open,
-			PreviousClose:    rawres.PreviousClose,
-			LastTradePrice:   rawres.LastTradePrice,
-			Ma50:             rawres.Ma50,
-			Ma200:            rawres.Ma200,
+			Bid:              float64(rawres.Bid),
+			Ask:              float64(rawres.Ask),
+			Open:             float64(rawres.Open),
+			PreviousClose:    float64(rawres.PreviousClose),
+			LastTradePrice:   float64(rawres.LastTradePrice),
+			Ma50:             float64(rawres.Ma50),
+			Ma200:            float64(rawres.Ma200),
 			DayRange:         fquery.Range{rawres.DayLow, rawres.DayHigh},
 			YearRange:        fquery.Range{rawres.YearLow, rawres.YearHigh},
 			EarningsPerShare: float64(rawres.EarningsPerShare),
