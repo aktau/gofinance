@@ -20,6 +20,10 @@ type Range struct {
 	High float64
 }
 
+func (r Range) Diff() float64 {
+	return r.High - r.Low
+}
+
 type Dividend struct {
 	Yield    float64
 	PerShare float64

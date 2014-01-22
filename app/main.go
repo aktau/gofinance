@@ -97,8 +97,8 @@ func calc(src fquery.Source) {
 		}
 		terminal.Stdout.Colorf("prevclose/open/lasttrade: @{m}%v@{|}/@{m}%v@{|}/@{m}%v@{|}\n",
 			r.PreviousClose, r.Open, r.LastTradePrice)
-		terminal.Stdout.Colorf("day low/high: @{m}%v@{|}/@{m}%v@{|}\n", r.DayRange.Low, r.DayRange.High)
-		terminal.Stdout.Colorf("year low/high: @{m}%v@{|}/@{m}%v@{|}\n", r.YearRange.Low, r.YearRange.High)
+		terminal.Stdout.Colorf("day low/high: @{m}%v@{|}/@{m}%v@{|} (@m%.2f@|)\n", r.DayRange.Low, r.DayRange.High, r.DayRange.Diff())
+		terminal.Stdout.Colorf("year low/high: @{m}%v@{|}/@{m}%v@{|} (@m%.2f@|)\n", r.YearRange.Low, r.YearRange.High, r.YearRange.Diff())
 		terminal.Stdout.Colorf("moving avg. 50/200: @{m}%v@{|}/@{m}%v@{|}\n", r.Ma50, r.Ma200)
 		terminal.Stdout.Colorf("last ex-dividend: @{m}%v@{|}, yield: @{m}%v@{|}, per share: @{m}%v@{|}\n",
 			r.Dividend.ExDate.Format("02/01"), r.Dividend.Yield, r.Dividend.PerShare)
