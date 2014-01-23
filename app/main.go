@@ -66,7 +66,7 @@ func hist(src fquery.Source) {
 
 func calc(src fquery.Source) {
 	fmt.Println("requesting information on individual stocks...")
-	res, err := src.Fetch([]string{
+	res, err := src.Quote([]string{
 		"VEUR.AS",
 		"VJPN.AS",
 		"VHYL.AS",
@@ -113,7 +113,6 @@ func calc(src fquery.Source) {
 		terminal.Stdout.Colorf("year low/high: @{m}%v@{|}/@{m}%v@{|} (@m%.2f@|)\n", r.YearRange.Low, r.YearRange.High, r.YearRange.Diff())
 		terminal.Stdout.Colorf("moving avg. 50/200: @{m}%v@{|}/@{m}%v@{|}\n", r.Ma50, r.Ma200)
 		DivYield := binary(fmt.Sprintf("%.2f%%", r.Dividend.Yield*100), r.Dividend.Yield > minDivYield)
-		fmt.Println("PURE YIELD", r.Dividend.Yield)
 		terminal.Stdout.Colorf("last ex-dividend: @{m}%v@{|}, div. per share: @{m}%v@{|}, div. yield: %v,\n earnings per share: @m%.2f@|, dividend payout ratio: @m%.2f@|\n",
 			r.Dividend.ExDate.Format("02/01"), r.Dividend.PerShare, DivYield, r.EarningsPerShare, r.Dividend.PerShare/r.EarningsPerShare)
 		terminal.Stdout.Colorf("You would need to buy @{m}%v@{|} (€ @{m}%.2f@{|}) shares of this stock to reach a transaction cost below %v%%\n",

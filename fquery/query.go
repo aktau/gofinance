@@ -99,15 +99,13 @@ type HistEntry struct {
 }
 
 type Source interface {
-	Fetch(tickers []string) ([]Result, error)
+	Quote(symbols []string) ([]Result, error)
 
-	Hist(tickers []string) (map[string]Hist, error)
-	HistLimit(tickers []string, start time.Time, end time.Time) (map[string]Hist, error)
+	Hist(symbols []string) (map[string]Hist, error)
+	HistLimit(symbols []string, start time.Time, end time.Time) (map[string]Hist, error)
 
-	DividendHist(tickers []string) (map[string]DividendHist, error)
-	DividendHistLimit(tickers []string, start time.Time, end time.Time) (map[string]DividendHist, error)
-
-	/* CompanyToTicker(company string, prefExchange string) string */
+	DividendHist(symbols []string) (map[string]DividendHist, error)
+	DividendHistLimit(symbols []string, start time.Time, end time.Time) (map[string]DividendHist, error)
 
 	fmt.Stringer
 }
