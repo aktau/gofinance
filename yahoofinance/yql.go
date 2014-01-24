@@ -90,6 +90,15 @@ type YqlJsonQuoteResponse struct {
 	}
 }
 
+type YqlJsonSingleQuoteResponse struct {
+	Query struct {
+		YqlJsonMeta
+		Results struct {
+			Quote YqlJsonQuote `json:"quote"`
+		}
+	}
+}
+
 type histResult interface {
 	Entries() []fquery.HistEntry
 }
@@ -154,14 +163,27 @@ func yqlQuotes(symbols []string) ([]fquery.Result, error) {
 		return nil, err
 	}
 
-	var resp YqlJsonQuoteResponse
-	err = json.Unmarshal(raw, &resp)
-	if err != nil {
-		return nil, err
+	/* json responses for just a single symbols are slightly different from
+	 * the ones for multiple symbols. */
+	var quotes []YqlJsonQuote
+	if len(symbols) == 1 {
+		var sresp YqlJsonSingleQuoteResponse
+		err = json.Unmarshal(raw, &sresp)
+		if err != nil {
+			return nil, err
+		}
+		quotes = []YqlJsonQuote{sresp.Query.Results.Quote}
+	} else {
+		var resp YqlJsonQuoteResponse
+		err = json.Unmarshal(raw, &resp)
+		if err != nil {
+			return nil, err
+		}
+		quotes = resp.Query.Results.Quote
 	}
 
-	results := make([]fquery.Result, 0, len(resp.Query.Results.Quote))
-	for _, rawres := range resp.Query.Results.Quote {
+	results := make([]fquery.Result, 0, len(quotes))
+	for _, rawres := range quotes {
 		rawres.Process()
 
 		res := fquery.Result{
