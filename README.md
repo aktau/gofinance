@@ -5,11 +5,18 @@ Financial information retrieval and munging. Planning to use Yahoo
 Finance solely at first. Written in go, based in parts on [richie
 rich](https://github.com/aantix/richie_rich) and
 
-Todo ====
+Todo
+====
 - Try to get data from Bloomberg as well: http://www.openbloomberg.com/
   (reduce dependency on Yahoo Finance)
-- Persist data locally to avoid overloading the servers and getting
-  blocked
+- Persist historical data locally (avoid getting blocked). This already
+  happens for quotes if you query through a cache like the SqliteCache.
+- Add an optional ncurses-like userface, for example with termon:
+  https://code.google.com/p/termon/
+- Plotting in the terminal, how to convert png -> ascii? Can't find easy
+  libcaca bindings for now.
+- Somehow emulate the google finance stock screener:
+  https://www.google.com/finance?ei=8EDhUuCpO4eHwAOklwE#stockscreener
 - Calculate dividend yield based on the price you actually paid (in
   aggregate) for stock you own. Why is this handy? For example: suppose
   you paid $20 for a stock that pays out $1 in dividends each year. It's
@@ -51,7 +58,23 @@ Todo ====
   levied taxes are massively important here. In the optimal case, where
   only Belgium and the US are paid (at the reduced US rate of 15%), we
   get an effective rate of 0.48%, which is not good but already double
-  the other one.
+  the other one. That said, it is often the case than when viewing yield
+  estimates, source tax has already been incorporated! Let's take VUSA
+  as an example, a Vanguard tracker for the S&P 500, domiciled in
+  Ireland. The US-based variant of this is VOO.  When you look at the
+  yield difference between the two you'll notice that VOO has a yield
+  of 2.09%, while VUSA has a yield of 1.63%. Why is this less? Because
+  the dividend withholding tax has already been deducted (that's 15%
+  because Ireland has a treaty with the US). Yet there's bound to be
+  some extra cost, as a 15% tax rate would lead to a VUSA yield of 2.09%
+  * 0.85 = 1.78%, but the reality says it's 1.63% (which corresponds to
+  a "taxation" of 23%). This sounds bad for the european investor. But,
+  there's a catch, the US yield is gross, so one has to deduct 30% WHT.
+  Which puts the advantage in the European camp. But, every country
+  wants another slice of the pie if you're in the EU. So you will in the
+  end receive 23% * whatever_your_country_wants%. In my case, Belgium,
+  that's 25%. So you lose again. Hopefully the EU will start acting up
+  against these practices.
 - Dividend payout history (and other indicators) analysis. Even if the
   yield is good, it's possible that the company has just had a really
   bad run, and thus its share price is really low. This _might_ mean

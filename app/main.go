@@ -24,7 +24,7 @@ func main() {
 		fmt.Printf("WARNING: could not initialize cache (%v), going to use pure source\n", err)
 	} else {
 		fmt.Println("cache initialized")
-		cache.SetQuoteExpiry(1 * time.Hour)
+		cache.SetQuoteExpiry(5 * time.Minute)
 		defer cache.Close()
 		src = cache
 	}
