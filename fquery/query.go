@@ -10,37 +10,10 @@ const (
 	ErrTplNotSupported = "source '%s' does not support action '%s'"
 )
 
-type Exchange struct {
-	Name  string /* eg.: Amsterdam */
-	Short string /* eg.: AS */
-}
-
-type Range struct {
-	Low  float64
-	High float64
-}
-
-func (r Range) Diff() float64 {
-	return r.High - r.Low
-}
-
-/* the dividend yield is a very important metric, in the absence of capital
- * gains (the appreciation of the price of the shares), it is the only return
- * on investment of a stock.
- *
- * An example, if X stock trades at $20, and Y stock trades at $40, and they
- * both pay out a dividend of $1 per share, then X has a yield of 0.05 while
- * Y has a yield of 0.025 */
-type Dividend struct {
-	PerShare float64   /* total (non-special) dividend payout / total amount of shares */
-	Yield    float64   /* annual div. per share / price per share */
-	ExDate   time.Time /* last dividend payout date */
-}
-
 type Result struct {
 	Symbol   string /* e.g.: VEUR.AS, Vanguard dev. europe on Amsterdam */
 	Name     string
-	Exchange Exchange
+	Exchange string
 
 	/* last actualization of the results */
 	Update time.Time
@@ -50,25 +23,21 @@ type Result struct {
 	AvgDailyVolume int64 /* avg amount of shares traded */
 
 	/* dividend & related */
-	Dividend         Dividend
 	EarningsPerShare float64
+	DividendPerShare float64   /* total (non-special) dividend payout / total amount of shares */
+	DividendYield    float64   /* annual div. per share / price per share */
+	DividendExDate   time.Time /* last dividend payout date */
 
-	/* price */
-	Bid            float64
-	Ask            float64
-	Open           float64
-	PreviousClose  float64
-	LastTradePrice float64
+	/* price & derived */
+	Bid, Ask              float64
+	Open, PreviousClose   float64
+	LastTradePrice        float64
+	Change, ChangePercent float64
 
-	DayRange  Range
-	YearRange Range
+	DayLow, DayHigh   float64
+	YearLow, YearHigh float64
 
-	Ma50  float64 /* 50-day moving average */
-	Ma200 float64 /* 200-day moving average */
-
-	/* derived from price */
-	Change        float64
-	ChangePercent float64
+	Ma50, Ma200 float64 /* 200- and 50-day moving average */
 }
 
 type Hist struct {
@@ -108,4 +77,11 @@ type Source interface {
 	DividendHistLimit(symbols []string, start time.Time, end time.Time) (map[string]DividendHist, error)
 
 	fmt.Stringer
+}
+
+type Cache interface {
+	Source
+
+	HasQuote(symbol string) bool
+	HasHist(symbol string, start *time.Time, end *time.Time) bool
 }

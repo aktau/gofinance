@@ -46,26 +46,26 @@ func csvQuotes(symbols []string) ([]fquery.Result, error) {
 		}
 
 		res := fquery.Result{
-			Name:           fields[0],
-			Symbol:         fields[1],
-			Ask:            floatOr(fields[3]),
-			Bid:            floatOr(fields[4]),
-			Open:           floatOr(fields[6]),
-			PreviousClose:  floatOr(fields[5]),
-			LastTradePrice: floatOr(fields[11]),
-			DayRange:       fquery.Range{floatOr(fields[7]), floatOr(fields[8])},
-			YearRange:      fquery.Range{floatOr(fields[9]), floatOr(fields[10])},
-			Ma50:           floatOr(fields[12]),
-			Ma200:          floatOr(fields[13]),
-			Dividend: fquery.Dividend{
-				Yield:    floatOr(fields[14]),
-				PerShare: floatOr(fields[15]),
-			},
+			Name:             fields[0],
+			Symbol:           fields[1],
+			Ask:              floatOr(fields[3]),
+			Bid:              floatOr(fields[4]),
+			Open:             floatOr(fields[6]),
+			PreviousClose:    floatOr(fields[5]),
+			LastTradePrice:   floatOr(fields[11]),
+			DayLow:           floatOr(fields[7]),
+			DayHigh:          floatOr(fields[8]),
+			YearLow:          floatOr(fields[9]),
+			YearHigh:         floatOr(fields[10]),
+			Ma50:             floatOr(fields[12]),
+			Ma200:            floatOr(fields[13]),
+			DividendYield:    floatOr(fields[14]),
+			DividendPerShare: floatOr(fields[15]),
 		}
 
 		tm, err := time.Parse(fields[16], util.FmtMonthDay)
 		if err == nil {
-			res.Dividend.ExDate = tm
+			res.DividendExDate = tm
 		}
 
 		results = append(results, res)

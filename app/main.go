@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/aktau/gofinance/fquery"
+	"github.com/aktau/gofinance/sqlitecache"
 	"github.com/aktau/gofinance/yahoofinance"
 	"github.com/wsxiaoys/terminal"
 	"github.com/wsxiaoys/terminal/color"
@@ -12,11 +13,23 @@ import (
 func main() {
 	fmt.Printf("welcome to gofinance %v.%v.%v\n", MAJ_VERSION, MIN_VERSION, MIC_VERSION)
 
+	var src fquery.Source
 	// s := yahoofinance.NewCvs()
-	s := yahoofinance.NewYql()
-	divhist(s)
-	// hist(s)
-	calc(s)
+	src = yahoofinance.NewYql()
+
+	sqlitecache.VERBOSITY = 2
+	cache, err := sqlitecache.New("./sqlite.db", src)
+	if err != nil {
+		fmt.Printf("WARNING: could not initialize cache (%v), going to use pure source\n", err)
+	} else {
+		fmt.Println("cache initialized")
+		defer cache.Close()
+		src = cache
+	}
+
+	divhist(src)
+	// hist(src)
+	calc(src)
 }
 
 func divhist(src fquery.Source) {
@@ -109,12 +122,12 @@ func calc(src fquery.Source) {
 		}
 		terminal.Stdout.Colorf("prevclose/open/lasttrade: @{m}%v@{|}/@{m}%v@{|}/@{m}%v@{|}\n",
 			r.PreviousClose, r.Open, r.LastTradePrice)
-		terminal.Stdout.Colorf("day low/high: @{m}%v@{|}/@{m}%v@{|} (@m%.2f@|)\n", r.DayRange.Low, r.DayRange.High, r.DayRange.Diff())
-		terminal.Stdout.Colorf("year low/high: @{m}%v@{|}/@{m}%v@{|} (@m%.2f@|)\n", r.YearRange.Low, r.YearRange.High, r.YearRange.Diff())
+		terminal.Stdout.Colorf("day low/high: @{m}%v@{|}/@{m}%v@{|} (@m%.2f@|)\n", r.DayLow, r.DayHigh, r.DayHigh-r.DayLow)
+		terminal.Stdout.Colorf("year low/high: @{m}%v@{|}/@{m}%v@{|} (@m%.2f@|)\n", r.YearLow, r.YearHigh, r.YearHigh-r.YearLow)
 		terminal.Stdout.Colorf("moving avg. 50/200: @{m}%v@{|}/@{m}%v@{|}\n", r.Ma50, r.Ma200)
-		DivYield := binary(fmt.Sprintf("%.2f%%", r.Dividend.Yield*100), r.Dividend.Yield > minDivYield)
+		DivYield := binary(fmt.Sprintf("%.2f%%", r.DividendYield*100), r.DividendYield > minDivYield)
 		terminal.Stdout.Colorf("last ex-dividend: @{m}%v@{|}, div. per share: @{m}%v@{|}, div. yield: %v,\n earnings per share: @m%.2f@|, dividend payout ratio: @m%.2f@|\n",
-			r.Dividend.ExDate.Format("02/01"), r.Dividend.PerShare, DivYield, r.EarningsPerShare, r.Dividend.PerShare/r.EarningsPerShare)
+			r.DividendExDate.Format("02/01"), r.DividendPerShare, DivYield, r.EarningsPerShare, r.DividendPerShare/r.EarningsPerShare)
 		terminal.Stdout.Colorf("You would need to buy @{m}%v@{|} (€ @{m}%.2f@{|}) shares of this stock to reach a transaction cost below %v%%\n",
 			nrOfShaderForTxCostPerc, nrOfShaderForTxCostPerc*r.Ask, desiredTxCostPerc*100)
 		fmt.Print("Richie Rich thinks this is in a ")

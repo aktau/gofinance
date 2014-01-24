@@ -135,7 +135,7 @@ func (r *respDividendHistory) Entries() []fquery.DividendEntry {
 }
 
 func yqlQuotes(symbols []string) ([]fquery.Result, error) {
-	quotedSymbols := stringMap(func(s string) string {
+	quotedSymbols := util.MapStr(func(s string) string {
 		return `"` + s + `"`
 	}, symbols)
 	query := fmt.Sprintf(`SELECT * FROM %s WHERE symbol IN (%s)`,
@@ -167,16 +167,16 @@ func yqlQuotes(symbols []string) ([]fquery.Result, error) {
 			LastTradePrice:   float64(rawres.LastTradePrice),
 			Ma50:             float64(rawres.Ma50),
 			Ma200:            float64(rawres.Ma200),
-			DayRange:         fquery.Range{rawres.DayLow, rawres.DayHigh},
-			YearRange:        fquery.Range{rawres.YearLow, rawres.YearHigh},
+			DayLow:           float64(rawres.DayLow),
+			DayHigh:          float64(rawres.DayHigh),
+			YearLow:          float64(rawres.YearLow),
+			YearHigh:         float64(rawres.YearHigh),
 			EarningsPerShare: float64(rawres.EarningsPerShare),
+			DividendPerShare: float64(rawres.DividendPerShare),
+			DividendYield:    float64(rawres.DividendYield),
 		}
 		if rawres.ExDividendDate != nil {
-			res.Dividend = fquery.Dividend{
-				PerShare: float64(rawres.DividendPerShare),
-				Yield:    float64(rawres.DividendYield) / 100,
-				ExDate:   rawres.ExDividendDate.GetTime(),
-			}
+			res.DividendExDate = rawres.ExDividendDate.GetTime()
 		}
 		results = append(results, res)
 	}
@@ -385,12 +385,4 @@ func Yql(query string) ([]byte, error) {
 
 	/* the first row includes column headers, ignore */
 	return httpBody, nil
-}
-
-func stringMap(mapping func(string) string, xs []string) []string {
-	mxs := make([]string, 0, len(xs))
-	for _, s := range xs {
-		mxs = append(mxs, mapping(s))
-	}
-	return mxs
 }
