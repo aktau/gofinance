@@ -183,7 +183,7 @@ func yqlQuotes(symbols []string) ([]fquery.Result, error) {
 			YearHigh:         float64(rawres.YearHigh),
 			EarningsPerShare: float64(rawres.EarningsPerShare),
 			DividendPerShare: float64(rawres.DividendPerShare),
-			DividendYield:    float64(rawres.DividendYield),
+			DividendYield:    float64(rawres.DividendYield / 100),
 		}
 		if rawres.ExDividendDate != nil {
 			res.DividendExDate = rawres.ExDividendDate.GetTime()
