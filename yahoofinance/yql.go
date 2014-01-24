@@ -38,6 +38,9 @@ type YqlJsonQuote struct {
 	Name   string `json:"Name"`
 	Symbol string `json:"Symbol"`
 
+	Volume             util.NullInt64 `json:"Volume"`
+	AverageDailyVolume util.NullInt64 `json:"AverageDailyVolume"`
+
 	Bid            util.NullFloat64 `json:"Bid"`
 	Ask            util.NullFloat64 `json:"Ask"`
 	Open           util.NullFloat64 `json:"Open"`
@@ -160,6 +163,8 @@ func yqlQuotes(symbols []string) ([]fquery.Result, error) {
 		res := fquery.Result{
 			Name:             rawres.Name,
 			Symbol:           rawres.Symbol,
+			Volume:           int64(rawres.Volume),
+			AvgDailyVolume:   int64(rawres.AverageDailyVolume),
 			Bid:              float64(rawres.Bid),
 			Ask:              float64(rawres.Ask),
 			Open:             float64(rawres.Open),
