@@ -8,6 +8,7 @@ import (
 	"github.com/wsxiaoys/terminal"
 	"github.com/wsxiaoys/terminal/color"
 	"math"
+	"time"
 )
 
 func main() {
@@ -23,6 +24,7 @@ func main() {
 		fmt.Printf("WARNING: could not initialize cache (%v), going to use pure source\n", err)
 	} else {
 		fmt.Println("cache initialized")
+		cache.SetQuoteExpiry(1 * time.Hour)
 		defer cache.Close()
 		src = cache
 	}

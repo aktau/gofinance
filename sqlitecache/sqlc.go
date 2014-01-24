@@ -20,7 +20,8 @@ var (
 type SqliteCache struct {
 	fquery.Source
 
-	gorp *gorp.DbMap
+	gorp        *gorp.DbMap
+	quoteExpiry time.Duration
 }
 
 func New(path string, src fquery.Source) (*SqliteCache, error) {
@@ -34,7 +35,7 @@ func New(path string, src fquery.Source) (*SqliteCache, error) {
 		dbmap.TraceOn("", log.New(os.Stdout, "dbmap: ", log.Lmicroseconds))
 	}
 
-	c := &SqliteCache{src, dbmap}
+	c := &SqliteCache{src, dbmap, 30 * time.Second}
 
 	c.gorp.AddTableWithName(fquery.Result{}, "quotes").SetKeys(false, "Symbol")
 	c.gorp.AddTableWithName(fquery.HistEntry{}, "histquotes")
@@ -46,6 +47,10 @@ func New(path string, src fquery.Source) (*SqliteCache, error) {
 	}
 
 	return c, nil
+}
+
+func (c *SqliteCache) SetQuoteExpiry(dur time.Duration) {
+	c.quoteExpiry = dur
 }
 
 func (c *SqliteCache) HasQuote(symbol string) bool {
@@ -69,9 +74,11 @@ func (c *SqliteCache) Quote(symbols []string) ([]fquery.Result, error) {
 	}, symbols)
 
 	var results []fquery.Result
+	cutoff := time.Now().Add(-c.quoteExpiry)
 	_, err := c.gorp.Select(&results,
-		fmt.Sprintf("SELECT * FROM quotes WHERE Symbol IN (%v)",
-			strings.Join(quotedSymbols, ",")))
+		fmt.Sprintf(
+			"SELECT * FROM quotes WHERE Symbol IN (%v) AND Updated >= datetime(%v, 'unixepoch')",
+			strings.Join(quotedSymbols, ","), cutoff.Unix()))
 	if err != nil {
 		/* if an error occured, just patch through to the source */
 		vprintln("sqlitecache: error while fetching quotes, ", err, ", will use underlying source")

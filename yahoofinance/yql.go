@@ -138,6 +138,10 @@ func (r *respDividendHistory) Entries() []fquery.DividendEntry {
 }
 
 func yqlQuotes(symbols []string) ([]fquery.Result, error) {
+	if len(symbols) == 0 {
+		return nil, nil
+	}
+
 	quotedSymbols := util.MapStr(func(s string) string {
 		return `"` + s + `"`
 	}, symbols)
@@ -163,6 +167,7 @@ func yqlQuotes(symbols []string) ([]fquery.Result, error) {
 		res := fquery.Result{
 			Name:             rawres.Name,
 			Symbol:           rawres.Symbol,
+			Updated:          time.Now(),
 			Volume:           int64(rawres.Volume),
 			AvgDailyVolume:   int64(rawres.AverageDailyVolume),
 			Bid:              float64(rawres.Bid),

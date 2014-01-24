@@ -16,7 +16,7 @@ type Result struct {
 	Exchange string
 
 	/* last actualization of the results */
-	Update time.Time
+	Updated time.Time
 
 	/* volume */
 	Volume         int64 /* outstanding shares */
@@ -81,6 +81,8 @@ type Source interface {
 
 type Cache interface {
 	Source
+
+	SetQuoteExpiry(dur time.Duration)
 
 	HasQuote(symbol string) bool
 	HasHist(symbol string, start *time.Time, end *time.Time) bool
