@@ -151,8 +151,18 @@ func (c *SqliteCache) mergeQuotes(quotes ...fquery.Result) error {
 
 	for _, quote := range quotes {
 		vprintln("merging quote: ", quote.Symbol)
-		err := c.gorp.Insert(&quote)
-		vprintln("error?", err)
+		count, err := c.gorp.Update(&quote)
+		if err == nil && count == 1 {
+			continue
+		}
+		vprintln("sqlitecache: error while UPDATE'ing symbol", quote.Symbol,
+			"err:", err, ", count:", count)
+
+		/* update didn't work, so try insert */
+		err = c.gorp.Insert(&quote)
+		if err != nil {
+			vprintln("sqlitecache: error while INSERTing", err)
+		}
 	}
 
 	return trans.Commit()
