@@ -61,6 +61,7 @@ type YqlJsonQuote struct {
 	DividendPerShare util.NullFloat64 `json:"DividendShare"`
 	EarningsPerShare util.NullFloat64 `json:"EarningsShare"`
 	DividendYield    util.NullFloat64 `json:"DividendYield"`
+	PeRatio          util.NullFloat64 `json:"PERatio"`
 }
 
 /* completes data */
@@ -206,6 +207,7 @@ func yqlQuotes(symbols []string) ([]fquery.Result, error) {
 			EarningsPerShare: float64(rawres.EarningsPerShare),
 			DividendPerShare: float64(rawres.DividendPerShare),
 			DividendYield:    float64(rawres.DividendYield / 100),
+			PeRatio:          float64(rawres.PeRatio),
 		}
 		if rawres.ExDividendDate != nil {
 			res.DividendExDate = rawres.ExDividendDate.GetTime()

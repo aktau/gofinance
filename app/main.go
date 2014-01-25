@@ -87,8 +87,12 @@ func calc(src fquery.Source) {
 		"VHYL.AS",
 		"AAPL",
 		"APC.F",
-		// "KO",
-		"SAN.MC",
+		"GSZ.PA",
+		"COFB.BR",
+		"BEFB.BR",
+		"GIMB.BR",
+		"ELI.BR",
+		"DELB.BR",
 		"BELG.BR",
 		"TNET.BR",
 	})
@@ -132,6 +136,27 @@ func calc(src fquery.Source) {
 			r.DividendExDate.Format("02/01"), r.DividendPerShare, DivYield, r.EarningsPerShare, r.DividendPerShare/r.EarningsPerShare)
 		terminal.Stdout.Colorf("You would need to buy @{m}%v@{|} (€ @{m}%.2f@{|}) shares of this stock to reach a transaction cost below %v%%\n",
 			nrOfShaderForTxCostPerc, nrOfShaderForTxCostPerc*r.Ask, desiredTxCostPerc*100)
+		if r.PeRatio != 0 {
+			terminal.Stdout.Colorf("The P/E-ratio is @m%.2f@|, ", r.PeRatio)
+			switch {
+			case 0 <= r.PeRatio && r.PeRatio <= 10:
+				terminal.Stdout.Colorf("this stock is either @gundervalued@|" +
+					"or the @rmarket thinks its earnings are going to" +
+					"decline@|, either that or the companies earnings are @gabove their historic trends@|.")
+			case 11 <= r.PeRatio && r.PeRatio <= 17:
+				terminal.Stdout.Colorf("this usually represents fair value.")
+			case 18 <= r.PeRatio && r.PeRatio <= 25:
+				terminal.Stdout.Colorf("either the stock is @rovervalued@| or the" +
+					" @gearnings have increased since the last earnings@|" +
+					" figure was published. The stock may also be a growth stock with" +
+					" @rearnings expected to increase substantially in the future@|.")
+			case 26 <= r.PeRatio:
+				terminal.Stdout.Colorf("Either we're in a @rbubble@|, or the" +
+					" company has @gvery high expected future earnings@|" +
+					" or @rthis years earnings have been exceptionally low@|.")
+			}
+			fmt.Println()
+		}
 		fmt.Print("Richie Rich thinks this is in a ")
 		if wouldRichieRichBuy(r) {
 			terminal.Stdout.Colorf("@{g}BUY@{|}")

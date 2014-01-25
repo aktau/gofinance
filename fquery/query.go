@@ -23,6 +23,7 @@ type Result struct {
 	AvgDailyVolume int64 /* avg amount of shares traded */
 
 	/* dividend & related */
+	PeRatio          float64
 	EarningsPerShare float64
 	DividendPerShare float64   /* total (non-special) dividend payout / total amount of shares */
 	DividendYield    float64   /* annual div. per share / price per share */
