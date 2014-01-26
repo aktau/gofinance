@@ -39,10 +39,10 @@ func New() fquery.Source {
 	return &Source{}
 }
 
-func (s *Source) Quote(symbols []string) ([]fquery.Result, error) {
-	slice := make([]fquery.Result, 0, len(symbols))
+func (s *Source) Quote(symbols []string) ([]fquery.Quote, error) {
+	slice := make([]fquery.Quote, 0, len(symbols))
 
-	results := make(chan *fquery.Result, len(symbols))
+	results := make(chan *fquery.Quote, len(symbols))
 	errors := make(chan error, len(symbols))
 
 	/* fetch all symbols in parallel */
@@ -89,7 +89,7 @@ func (s *Source) String() string {
 	return "Bloomberg"
 }
 
-func single(symbol string) (*fquery.Result, error) {
+func single(symbol string) (*fquery.Quote, error) {
 	resp, err := http.Get("http://www.bloomberg.com/quote/" + symbol)
 	if err != nil {
 		return nil, err
@@ -105,7 +105,7 @@ func single(symbol string) (*fquery.Result, error) {
 	quote := &bloomQuote{}
 	walk(doc, quote)
 
-	return &fquery.Result{
+	return &fquery.Quote{
 		Name:             quote.Name,
 		Symbol:           symbol,
 		Updated:          time.Now(),

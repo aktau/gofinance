@@ -1,7 +1,7 @@
 package fquery
 
-func QuotesToMap(quotes []Result) map[string]*Result {
-	m := make(map[string]*Result)
+func QuotesToMap(quotes []Quote) map[string]*Quote {
+	m := make(map[string]*Quote)
 	for _, quote := range quotes {
 		m[quote.Symbol] = &quote
 	}

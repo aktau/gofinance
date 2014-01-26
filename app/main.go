@@ -212,7 +212,7 @@ func movingAverage(hist fquery.Hist) float64 {
 	return sum / count
 }
 
-func wouldRichieRichBuy(res fquery.Result) bool {
+func wouldRichieRichBuy(res fquery.Quote) bool {
 	return res.PreviousClose > res.Ma200
 }
 

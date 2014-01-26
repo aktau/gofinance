@@ -3,7 +3,7 @@ Gofinance
 
 Financial information retrieval and munging, will support multiple
 sources (Yahoo Finance, Bloomberg, ...). Written in Go, based in parts
-on [richie rich](https://github.com/aantix/richie_rich)
+on [richie rich](https://github.com/aantix/richie_rich).
 
 It's logically composed of a few submodules:
 

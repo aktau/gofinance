@@ -10,7 +10,7 @@ const (
 	ErrTplNotSupported = "source '%s' does not support action '%s'"
 )
 
-type Result struct {
+type Quote struct {
 	Symbol   string /* e.g.: VEUR.AS, Vanguard dev. europe on Amsterdam */
 	Name     string
 	Exchange string
@@ -69,7 +69,7 @@ type HistEntry struct {
 }
 
 type Source interface {
-	Quote(symbols []string) ([]Result, error)
+	Quote(symbols []string) ([]Quote, error)
 
 	Hist(symbols []string) (map[string]Hist, error)
 	HistLimit(symbols []string, start time.Time, end time.Time) (map[string]Hist, error)

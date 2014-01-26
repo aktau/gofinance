@@ -27,7 +27,7 @@ func NewYql() fquery.Source {
 	return &Source{srcType: TypeYql}
 }
 
-func (s *Source) Quote(symbols []string) ([]fquery.Result, error) {
+func (s *Source) Quote(symbols []string) ([]fquery.Quote, error) {
 	switch s.srcType {
 	case TypeCsv:
 		return csvQuotes(symbols)

@@ -147,7 +147,7 @@ func (r *respDividendHistory) Entries() []fquery.DividendEntry {
 	return r.Query.Results.Rows
 }
 
-func yqlQuotes(symbols []string) ([]fquery.Result, error) {
+func yqlQuotes(symbols []string) ([]fquery.Quote, error) {
 	if len(symbols) == 0 {
 		return nil, nil
 	}
@@ -183,11 +183,11 @@ func yqlQuotes(symbols []string) ([]fquery.Result, error) {
 		quotes = resp.Query.Results.Quote
 	}
 
-	results := make([]fquery.Result, 0, len(quotes))
+	results := make([]fquery.Quote, 0, len(quotes))
 	for _, rawres := range quotes {
 		rawres.Process()
 
-		res := fquery.Result{
+		res := fquery.Quote{
 			Name:             rawres.Name,
 			Symbol:           rawres.Symbol,
 			Updated:          time.Now(),

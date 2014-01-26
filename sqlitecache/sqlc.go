@@ -37,7 +37,7 @@ func New(path string, src fquery.Source) (*SqliteCache, error) {
 
 	c := &SqliteCache{src, dbmap, 30 * time.Second}
 
-	c.gorp.AddTableWithName(fquery.Result{}, "quotes").SetKeys(false, "Symbol")
+	c.gorp.AddTableWithName(fquery.Quote{}, "quotes").SetKeys(false, "Symbol")
 	c.gorp.AddTableWithName(fquery.HistEntry{}, "histquotes")
 
 	err = dbmap.CreateTablesIfNotExists()
@@ -67,13 +67,13 @@ func (c *SqliteCache) Close() error {
 
 /* TODO: query on datetime for more recent results only
  * TODO: escape your strings, symbols could be user input */
-func (c *SqliteCache) Quote(symbols []string) ([]fquery.Result, error) {
+func (c *SqliteCache) Quote(symbols []string) ([]fquery.Quote, error) {
 	/* fetch all the quotes we have */
 	quotedSymbols := util.MapStr(func(s string) string {
 		return `"` + s + `"`
 	}, symbols)
 
-	var results []fquery.Result
+	var results []fquery.Quote
 	cutoff := time.Now().Add(-c.quoteExpiry)
 	_, err := c.gorp.Select(&results,
 		fmt.Sprintf(
@@ -139,7 +139,7 @@ func (c *SqliteCache) String() string {
 }
 
 /* TODO: this doesn't actually merge yet, just insert */
-func (c *SqliteCache) mergeQuotes(quotes ...fquery.Result) error {
+func (c *SqliteCache) mergeQuotes(quotes ...fquery.Quote) error {
 	if len(quotes) == 0 {
 		return nil
 	}

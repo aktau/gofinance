@@ -17,7 +17,7 @@ const (
 	QuotesUrl = "http://download.finance.yahoo.com/d/quotes.csv"
 )
 
-func csvQuotes(symbols []string) ([]fquery.Result, error) {
+func csvQuotes(symbols []string) ([]fquery.Quote, error) {
 	v := url.Values{}
 
 	/* which symbols? */
@@ -36,7 +36,7 @@ func csvQuotes(symbols []string) ([]fquery.Result, error) {
 	defer req.Close()
 	r := csv.NewReader(req)
 
-	results := make([]fquery.Result, 0, len(symbols))
+	results := make([]fquery.Quote, 0, len(symbols))
 	for {
 		fields, err := r.Read()
 		if err == io.EOF {
@@ -45,7 +45,7 @@ func csvQuotes(symbols []string) ([]fquery.Result, error) {
 			return nil, err
 		}
 
-		res := fquery.Result{
+		res := fquery.Quote{
 			Name:             fields[0],
 			Symbol:           fields[1],
 			Ask:              floatOr(fields[3]),
