@@ -42,7 +42,7 @@ func main() {
 		"BELG.BR",
 	}
 
-	sqlitecache.VERBOSITY = 2
+	sqlitecache.VERBOSITY = 0
 	bloomberg.VERBOSITY = 2
 	cache, err := sqlitecache.New("./sqlite.db", src)
 	if err != nil {
