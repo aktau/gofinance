@@ -43,7 +43,33 @@ func (s *Source) Quote(symbols []string) ([]fquery.Quote, error) {
 }
 
 func (s *Source) Hist(symbols []string) (map[string]fquery.Hist, error) {
-	return nil, fmt.Errorf(fquery.ErrTplNotSupported, s.String(), "hist")
+	m := make(map[string]fquery.Hist, 0)
+
+	results := make(chan *fquery.Hist, len(symbols))
+	errors := make(chan error, len(symbols))
+
+	/* fetch all symbols in parallel */
+	for _, symbol := range symbols {
+		go func(symbol string) {
+			quote, err := getHist(symbol)
+			if err != nil {
+				errors <- err
+			} else {
+				results <- quote
+			}
+		}(symbol)
+	}
+
+	for i := 0; i < len(symbols); i++ {
+		select {
+		case err := <-errors:
+			fmt.Println("bloomberg: error while fetching,", err)
+		case r := <-results:
+			m[r.Symbol] = *r
+		}
+	}
+
+	return m, nil
 }
 
 func (s *Source) HistLimit(symbols []string, start time.Time, end time.Time) (map[string]fquery.Hist, error) {
