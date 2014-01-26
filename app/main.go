@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/aktau/gofinance/bloomberg"
 	"github.com/aktau/gofinance/fquery"
 	"github.com/aktau/gofinance/sqlitecache"
 	"github.com/aktau/gofinance/yahoofinance"
@@ -17,6 +18,27 @@ func main() {
 	var src fquery.Source
 	// s := yahoofinance.NewCvs()
 	src = yahoofinance.NewYql()
+	src = bloomberg.New()
+
+	// symbols := []string{
+	// 	"VEUR.AS",
+	// 	"VJPN.AS",
+	// 	"VHYL.AS",
+	// 	"AAPL",
+	// 	"APC.F",
+	// 	"GSZ.PA",
+	// 	"COFB.BR",
+	// 	"BEFB.BR",
+	// 	"GIMB.BR",
+	// 	"ELI.BR",
+	// 	"DELB.BR",
+	// 	"BELG.BR",
+	// 	"TNET.BR",
+	// }
+
+	symbols := []string{
+		"BELG:BB",
+	}
 
 	sqlitecache.VERBOSITY = 2
 	cache, err := sqlitecache.New("./sqlite.db", src)
@@ -29,9 +51,9 @@ func main() {
 		src = cache
 	}
 
-	divhist(src)
+	// divhist(src)
 	// hist(src)
-	calc(src)
+	calc(src, symbols...)
 }
 
 func divhist(src fquery.Source) {
@@ -79,23 +101,9 @@ func hist(src fquery.Source) {
 	// }
 }
 
-func calc(src fquery.Source) {
-	fmt.Println("requesting information on individual stocks...")
-	res, err := src.Quote([]string{
-		"VEUR.AS",
-		"VJPN.AS",
-		"VHYL.AS",
-		"AAPL",
-		"APC.F",
-		"GSZ.PA",
-		"COFB.BR",
-		"BEFB.BR",
-		"GIMB.BR",
-		"ELI.BR",
-		"DELB.BR",
-		"BELG.BR",
-		"TNET.BR",
-	})
+func calc(src fquery.Source, symbols ...string) {
+	fmt.Println("requesting information on individual stocks...", symbols)
+	res, err := src.Quote(symbols)
 	if err != nil {
 		fmt.Println("gofinance: could not fetch, ", err)
 		return
@@ -108,8 +116,8 @@ func calc(src fquery.Source) {
 
 	fmt.Println()
 	for _, r := range res {
-		nrOfShaderForTxCostPerc := sharesToBuy(r.Ask, txCost, desiredTxCostPerc)
-		bidAskSpreadPerc := (r.Ask - r.Bid) / r.Bid
+		price := nvl(r.Ask, r.LastTradePrice)
+		amountOfsharesForLowTxCost := sharesToBuy(price, txCost, desiredTxCostPerc)
 
 		upDir := r.LastTradePrice >= r.PreviousClose
 		upVal := r.LastTradePrice - r.PreviousClose
@@ -119,13 +127,18 @@ func calc(src fquery.Source) {
 			binary(fmt.Sprintf("%+.2f", upVal), upDir),
 			binary(fmt.Sprintf("%+.2f%%", upPerc), upDir),
 			binary(arrow(upDir), upDir))
-		bidAskPrint := binary(fmt.Sprintf("%.3f%%", bidAskSpreadPerc*100), bidAskSpreadPerc < maxBidAskSpreadPerc)
-		terminal.Stdout.Colorf("bid/ask: @m%v@|/@m%v@|, spread: @m%.3f@| (%v)\n", r.Bid, r.Ask, r.Ask-r.Bid, bidAskPrint)
-		if bidAskSpreadPerc < maxBidAskSpreadPerc {
-			fmt.Printf("if you want to buy this stock, place a %v at about %v\n", green("limit order"), green("%.2f", (r.Ask+r.Bid)/2))
-		} else {
-			fmt.Println(red("be cautious, the spread of this stock is rather high"))
+
+		if r.Bid != 0 && r.Ask != 0 {
+			bidAskSpreadPerc := (r.Ask - r.Bid) / r.Bid
+			bidAskPrint := binary(fmt.Sprintf("%.3f%%", bidAskSpreadPerc*100), bidAskSpreadPerc < maxBidAskSpreadPerc)
+			terminal.Stdout.Colorf("bid/ask: @m%v@|/@m%v@|, spread: @m%.3f@| (%v)\n", r.Bid, r.Ask, r.Ask-r.Bid, bidAskPrint)
+			if bidAskSpreadPerc < maxBidAskSpreadPerc {
+				fmt.Printf("if you want to buy this stock, place a %v at about %v\n", green("limit order"), green("%.2f", (r.Ask+r.Bid)/2))
+			} else {
+				fmt.Println(red("be cautious, the spread of this stock is rather high"))
+			}
 		}
+
 		terminal.Stdout.Colorf("prevclose/open/lasttrade: @{m}%v@{|}/@{m}%v@{|}/@{m}%v@{|}\n",
 			r.PreviousClose, r.Open, r.LastTradePrice)
 		terminal.Stdout.Colorf("day low/high: @{m}%v@{|}/@{m}%v@{|} (@m%.2f@|)\n", r.DayLow, r.DayHigh, r.DayHigh-r.DayLow)
@@ -135,7 +148,7 @@ func calc(src fquery.Source) {
 		terminal.Stdout.Colorf("last ex-dividend: @{m}%v@{|}, div. per share: @{m}%v@{|}, div. yield: %v,\n earnings per share: @m%.2f@|, dividend payout ratio: @m%.2f@|\n",
 			r.DividendExDate.Format("02/01"), r.DividendPerShare, DivYield, r.EarningsPerShare, r.DividendPerShare/r.EarningsPerShare)
 		terminal.Stdout.Colorf("You would need to buy @{m}%v@{|} (€ @{m}%.2f@{|}) shares of this stock to reach a transaction cost below %v%%\n",
-			nrOfShaderForTxCostPerc, nrOfShaderForTxCostPerc*r.Ask, desiredTxCostPerc*100)
+			amountOfsharesForLowTxCost, amountOfsharesForLowTxCost*price, desiredTxCostPerc*100)
 		if r.PeRatio != 0 {
 			terminal.Stdout.Colorf("The P/E-ratio is @m%.2f@|, ", r.PeRatio)
 			switch {
@@ -157,13 +170,17 @@ func calc(src fquery.Source) {
 			}
 			fmt.Println()
 		}
-		fmt.Print("Richie Rich thinks this is in a ")
-		if wouldRichieRichBuy(r) {
-			terminal.Stdout.Colorf("@{g}BUY@{|}")
-		} else {
-			terminal.Stdout.Colorf("@{r}SELL@{|}")
+
+		if r.Ma200 != 0 {
+			fmt.Print("Richie Rich thinks this is in a ")
+			if wouldRichieRichBuy(r) {
+				terminal.Stdout.Colorf("@{g}BUY@{|}")
+			} else {
+				terminal.Stdout.Colorf("@{r}SELL@{|}")
+			}
+			fmt.Println(" position")
 		}
-		fmt.Println(" position")
+
 		fmt.Println("======================")
 	}
 }
@@ -223,4 +240,15 @@ func arrow(decision bool) string {
 	} else {
 		return "↓"
 	}
+}
+
+/* returns the first non-0 float */
+func nvl(xs ...float64) float64 {
+	for _, x := range xs {
+		if x != 0 {
+			return x
+		}
+	}
+
+	return 0
 }
