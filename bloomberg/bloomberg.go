@@ -13,13 +13,14 @@ import (
 type Source struct{}
 
 type bloomQuote struct {
-	LastTradePrice float64
+	Name string
 
 	Volume int64
 
 	Open, PrevClose   float64
 	DayLow, DayHigh   float64
 	YearLow, YearHigh float64
+	LastTradePrice    float64
 
 	YearReturn        float64
 	PeRatio           float64
@@ -34,7 +35,6 @@ type bloomQuote struct {
 	DividendExDate   time.Time
 }
 
-/* TODO: return fquery.Source */
 func New() fquery.Source {
 	return &Source{}
 }
@@ -106,7 +106,7 @@ func single(symbol string) (*fquery.Result, error) {
 	walk(doc, quote)
 
 	return &fquery.Result{
-		Name:             "Belgacom",
+		Name:             quote.Name,
 		Symbol:           symbol,
 		Updated:          time.Now(),
 		Volume:           quote.Volume,
@@ -129,6 +129,9 @@ func single(symbol string) (*fquery.Result, error) {
 func walk(n *html.Node, b *bloomQuote) bool {
 	if n.Type == html.ElementNode {
 		switch {
+		case n.Data == "div" && hasClass(n, "ticker_header_top"):
+			h2 := findFirstChild(n, "h2")
+			b.Name = text(h2)
 		case n.Data == "div" && hasClass(n, "key_stat"):
 			/* select the table that follows */
 			bloomtable(findFirstChild(n, "table"), b)
