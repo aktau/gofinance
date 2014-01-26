@@ -1,14 +1,52 @@
 Gofinance
 =========
 
-Financial information retrieval and munging. Planning to use Yahoo
-Finance solely at first. Written in go, based in parts on [richie
-rich](https://github.com/aantix/richie_rich) and
+Financial information retrieval and munging, will support multiple
+sources (Yahoo Finance, Bloomberg, ...). Written in Go, based in parts
+on [richie rich](https://github.com/aantix/richie_rich)
+
+It's logically composed of a few submodules:
+
+- fquery: provides an interface for querying a financial source
+  (`fquery.Source`), but doesn't implement any Source itself.
+- yahoofinance: implements _fquery_. Queries **Yahoo Finance** for
+  financial data, .
+- bloomberg: implements _fquery_. Queries Bloomberg for financial data.
+  (NOTE: at the moment it doesn't fetch the same types of data as Yahoo
+  Finance, I'm working on a way to derive the missing pieces, and also
+  integrate the extra data that Bloomberg gives into fquery, such as 1
+  year return %)
+- sqlitecache: implements _fquery_. Caches the information returned from
+  any `fquery.Source` in a SQLite databse.
+- app: a sample application you can compile and run (go build), to see
+  what you can do with fquery and its modules.
+
+Requirements
+============
+
+- Golang 1.1 (I think, I'm developing on Golang 1.2, but not using any
+  features new to 1.2).
+
+Features
+========
+
+- Parallel fetching of data (with goroutines)
+- (Optional) caching of results (so the sources don't block you),
+  configurable expiry time. This also allows for local pre-calculations that
+  are too expensive to run on every fetch.
+
+Used libraries
+==============
+
+| Package | Description | License |
+| --- | --- | --- |
+| [code.google.com/p/go.net/html](code.google.com/p/go.net/html) | HTML parser | MIT |
+| [github.com/mattn/go-sqlite3](github.com/mattn/go-sqlite3)| Database driver for SQLite | MIT |
+| [github.com/coopernurse/gorp](github.com/coopernurse/gorp) | ORM(ish) library| MIT |
+| [github.com/wsxiaoys/terminal](github.com/wsxiaoys/terminal) | Ansi terminal colours | BSD (3-clause) |
 
 Todo
 ====
-- Try to get data from Bloomberg as well: http://www.openbloomberg.com/
-  (reduce dependency on Yahoo Finance)
 - Persist historical data locally (avoid getting blocked). This already
   happens for quotes if you query through a cache like the SqliteCache.
 - Add an optional ncurses-like userface, for example with termon:
@@ -92,34 +130,7 @@ Todo
   Put shortly, fundamentals. One needs to make sure that the dividend is
   not going to be slashed and send the yield to kingdom come.
 
-Technical
+Copyright
 =========
 
-Yahoo Finance
--------------
-
-There are broadly speaking 2 ways to easily get at the Yahoo Finance
-data:
-
-1. Query via YQL (Yahoo Query Language), a SQL lookalike. This happens
-   through  a HTTP GET request. The response can be XML or JSON, depending
-   on the GET parameters.
-2. Request a CSV file, also with a HTTP GET request.
-
-The first approach is a bit more high-level, and actually queries the
-CSV file of method (2) under the hood. You'd think that requesting the
-CSV file would be faster, since it skips a step, but this appears to be
-false according to my testing. This could be for two reasons:
-
-1. The YQL server has preferential access to Yahoo's own APIs
-2. The YQL server caches the CSV file somehow (and/or is aware when it
-   gets refreshed).
-
-At any rate, **gofinance** implements both methods, and performs
-requests in parallel. By default the YQL way is used, although it's easy
-to switch.
-
-There seems to be a third kind of API, possibly related with the CSV
-one, possibly not, it's "described"
-[here](http://www.quantshare.com/sa-426-6-ways-to-download-free-intraday-and-tick-data-for-the-us-stock-market),
-the same site also lists some other interesting sources. Worth a look.
+Copyright (c) 2014, Nicolas Hillegeer. All rights reserved.
