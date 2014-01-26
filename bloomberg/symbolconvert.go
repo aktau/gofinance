@@ -1,13 +1,19 @@
 package bloomberg
 
 import (
-	"fmt"
 	"strings"
 )
 
 var yahooToBloombergMap = map[string]string{
-	"AS": "NA",
-	"BR": "BB",
+	"AS": "NA", /* Amsterdam Euronext */
+	"BR": "BB", /* Brussels Euronext */
+	"L":  "LN", /* London Stock Exchange */
+	"MI": "IM", /* Milan */
+	"SI": "SP", /* Singapore */
+	"DE": "GR", /* Xetra Germany */
+	"SA": "BZ", /* Sao Paulo, Brasil */
+	"MC": "SM", /* Madrid, Spain */
+	"MX": "MM", /* Mexico */
 }
 
 var bloombergToYahooMap map[string]string
@@ -25,15 +31,25 @@ func revmap(orig map[string]string) map[string]string {
 }
 
 func yahooToBloomberg(symbol string) string {
+	/* symbols without a specific exchange are assumed to be US-based */
+	if !strings.Contains(symbol, ".") {
+		return symbol + ":US"
+	}
+
 	return conv(symbol, yahooToBloombergMap, ".", ":")
 }
 
 func bloombergToYahoo(symbol string) string {
+	/* US symbols are special since yahoo doesn't suffix them, but bloomberg
+	 * does */
+	if strings.Contains(symbol, ":US") {
+		return strings.Split(symbol, ":")[0]
+	}
+
 	return conv(symbol, bloombergToYahooMap, ":", ".")
 }
 
 func conv(symbol string, symbmap map[string]string, oldsep string, newsep string) string {
-	fmt.Println("CONVERTING, MAP", symbmap)
 	if strings.Contains(symbol, oldsep) {
 		parts := strings.Split(symbol, oldsep)
 		if len(parts) != 2 {
