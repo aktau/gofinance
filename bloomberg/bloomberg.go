@@ -6,6 +6,8 @@ import (
 	"time"
 )
 
+var VERBOSITY = 0
+
 type Source struct{}
 
 func New() fquery.Source {
@@ -13,6 +15,8 @@ func New() fquery.Source {
 }
 
 func (s *Source) Quote(symbols []string) ([]fquery.Quote, error) {
+	symbols = convertSymbols(symbols)
+
 	slice := make([]fquery.Quote, 0, len(symbols))
 
 	results := make(chan *fquery.Quote, len(symbols))
@@ -35,6 +39,7 @@ func (s *Source) Quote(symbols []string) ([]fquery.Quote, error) {
 		case err := <-errors:
 			fmt.Println("bloomberg: error while fetching,", err)
 		case r := <-results:
+			r.Symbol = bloombergToYahoo(r.Symbol)
 			slice = append(slice, *r)
 		}
 	}
@@ -43,6 +48,8 @@ func (s *Source) Quote(symbols []string) ([]fquery.Quote, error) {
 }
 
 func (s *Source) Hist(symbols []string) (map[string]fquery.Hist, error) {
+	symbols = convertSymbols(symbols)
+
 	m := make(map[string]fquery.Hist, 0)
 
 	results := make(chan *fquery.Hist, len(symbols))
@@ -65,6 +72,7 @@ func (s *Source) Hist(symbols []string) (map[string]fquery.Hist, error) {
 		case err := <-errors:
 			fmt.Println("bloomberg: error while fetching,", err)
 		case r := <-results:
+			r.Symbol = bloombergToYahoo(r.Symbol)
 			m[r.Symbol] = *r
 		}
 	}
@@ -86,4 +94,20 @@ func (s *Source) DividendHistLimit(symbols []string, start time.Time, end time.T
 
 func (s *Source) String() string {
 	return "Bloomberg"
+}
+
+func vprintln(a ...interface{}) (int, error) {
+	if VERBOSITY > 0 {
+		return fmt.Println(a...)
+	}
+
+	return 0, nil
+}
+
+func vprintf(format string, a ...interface{}) (int, error) {
+	if VERBOSITY > 0 {
+		return fmt.Printf(format, a...)
+	}
+
+	return 0, nil
 }

@@ -37,10 +37,13 @@ func main() {
 	// }
 
 	symbols := []string{
-		"BELG:BB",
+		"VEUR.AS",
+		"VFEM.AS",
+		"BELG.BR",
 	}
 
 	sqlitecache.VERBOSITY = 2
+	bloomberg.VERBOSITY = 2
 	cache, err := sqlitecache.New("./sqlite.db", src)
 	if err != nil {
 		fmt.Printf("WARNING: could not initialize cache (%v), going to use pure source\n", err)
@@ -52,7 +55,7 @@ func main() {
 	}
 
 	// divhist(src)
-	// hist(src)
+	// hist(src, symbols...)
 	calc(src, symbols...)
 }
 
@@ -75,8 +78,8 @@ func divhist(src fquery.Source) {
 	}
 }
 
-func hist(src fquery.Source) {
-	res, err := src.Hist([]string{"VEUR.AS", "VJPN.AS"})
+func hist(src fquery.Source, symbols ...string) {
+	res, err := src.Hist(symbols)
 	if err != nil {
 		fmt.Println("gofinance: could not fetch history, ", err)
 		return
@@ -87,7 +90,8 @@ func hist(src fquery.Source) {
 		fmt.Println("===========")
 		fmt.Println("Length:", len(hist.Entries))
 		for _, row := range hist.Entries {
-			fmt.Println("row:", row)
+			t := time.Time(row.Date)
+			fmt.Printf("%v: %v (%v)\n", t.Format("02/01/2006"), row.Close, row)
 		}
 		fmt.Println("Moving average manual calc:", movingAverage(hist))
 	}

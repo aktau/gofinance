@@ -47,6 +47,15 @@ Used libraries
 
 Todo
 ====
+- bloomberg: Funds/ETFs have a different layout than normal stocks on
+  Bloomberg, adapt to that.
+- Combine data from Yahoo Finance and Bloomberg. (this should be
+  implemented as a Source made out of multiple underlying Sources, like
+  the Cache). If Yahoo Finance doesn't have the data on a company,
+  Bloomberg usually has it. So there needs to be a function that
+  determines if a Quote is "too incomplete". In the same vein, things
+  like for example "dividend yield" can sometimes differ quite a bit
+  between YF and Bloomberg, we need to find a way to reconcile this.
 - Persist historical data locally (avoid getting blocked). This already
   happens for quotes if you query through a cache like the SqliteCache.
 - Add an optional ncurses-like userface, for example with termon:
