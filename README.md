@@ -9,15 +9,15 @@ It's logically composed of a few submodules:
 
 - fquery: provides an interface for querying a financial source
   (`fquery.Source`), but doesn't implement any Source itself.
-- yahoofinance: implements _fquery_. Queries **Yahoo Finance** for
+- yahoofinance: implements **fquery**. Queries **Yahoo Finance** for
   financial data, .
-- bloomberg: implements _fquery_. Queries Bloomberg for financial data.
+- bloomberg: implements **fquery**. Queries **Bloomberg** for financial data.
   (NOTE: at the moment it doesn't fetch the same types of data as Yahoo
   Finance, I'm working on a way to derive the missing pieces, and also
   integrate the extra data that Bloomberg gives into fquery, such as 1
   year return %)
-- sqlitecache: implements _fquery_. Caches the information returned from
-  any `fquery.Source` in a SQLite databse.
+- sqlitecache: implements **fquery**. **Caches** the information returned from
+  any `fquery.Source` in a **SQLite** databse.
 - app: a sample application you can compile and run (go build), to see
   what you can do with fquery and its modules.
 
