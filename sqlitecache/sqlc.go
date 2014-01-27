@@ -56,6 +56,11 @@ func New(path string, src fquery.Source) (*SqliteCache, error) {
 		return nil, err
 	}
 
+	db.Exec("PRAGMA synchronous=NORMAL")
+	db.Exec("PRAGMA journal_mode=WAL")
+	db.Exec("PRAGMA temp_store=MEMORY")
+	db.Exec("PRAGMA cache_size=4096")
+
 	dbmap := &gorp.DbMap{Db: db, Dialect: gorp.SqliteDialect{}}
 	if VERBOSITY >= 2 {
 		dbmap.TraceOn("", log.New(os.Stdout, "dbmap: ", log.Lmicroseconds))
