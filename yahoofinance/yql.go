@@ -14,11 +14,8 @@ import (
 )
 
 const (
-	PublicApiUrl        = "http://query.yahooapis.com/v1/public/yql"
-	DatatablesUrl       = "store://datatables.org/alltableswithkeys"
-	ChartUrl            = "http://chart.finance.yahoo.com/z?s=AAPL&t=6m&q=l&l=on&z=s&p=m50,m200"
-	TimeShortFormat     = "Jan 02"
-	TimeYearShortFormat = "Jan 02 2006"
+	PublicApiUrl  = "http://query.yahooapis.com/v1/public/yql"
+	DatatablesUrl = "store://datatables.org/alltableswithkeys"
 )
 
 var (
