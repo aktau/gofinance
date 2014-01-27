@@ -66,7 +66,14 @@ func New(path string, src fquery.Source) (*SqliteCache, error) {
 	c.gorp.AddTableWithName(fquery.Quote{}, "quotes").SetKeys(false, "Symbol")
 	c.gorp.AddTableWithName(dbHistEntry{}, "histquotes").SetKeys(false, "Symbol", "Date")
 
-	err = dbmap.CreateTablesIfNotExists()
+	err = c.gorp.CreateTablesIfNotExists()
+	if err != nil {
+		c.Close()
+		return nil, err
+	}
+
+	/* support date range queries over all symbols */
+	_, err = c.gorp.Exec(`CREATE INDEX IF NOT EXISTS hq_date_idx ON histquotes (Date)`)
 	if err != nil {
 		c.Close()
 		return nil, err
