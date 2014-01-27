@@ -57,6 +57,8 @@ Used libraries
 
 Todo
 ====
+- fallback to Yahoo Finance CSV when the YQL interface response with
+  things like "too many instructions executed".
 - bloomberg: Funds/ETFs have a different layout than normal stocks on
   Bloomberg, adapt to that.
 - Combine data from Yahoo Finance and Bloomberg. (this should be
@@ -66,6 +68,14 @@ Todo
   determines if a Quote is "too incomplete". In the same vein, things
   like for example "dividend yield" can sometimes differ quite a bit
   between YF and Bloomberg, we need to find a way to reconcile this.
+- Combine data #2: sometimes neither Bloomberg nor Yahoo have the
+  complete picture of a company. For example, Bloomberg usually has the
+  full dividend yield information and Yahoo often seems to lack it. But
+  Yahoo has more information in other departments, so this could be
+  merged. To do this, we would need a way to specify for each datasource
+  what it is intrinsically "good" at, such that when both Yahoo and
+  Bloomberg give dividend information, Bloombergs' is preferred, et
+  cetera.
 - Persist historical data locally (avoid getting blocked). This already
   happens for quotes if you query through a cache like the SqliteCache.
 - Add an optional ncurses-like userface, for example with termon:
