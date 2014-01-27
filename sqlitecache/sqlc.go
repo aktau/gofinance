@@ -321,20 +321,19 @@ func (c *SqliteCache) String() string {
 	return "SQLite cache, backed by: " + c.String()
 }
 
-/* TODO: actually use the transaction, or don't even start it... */
 func (c *SqliteCache) mergeQuotes(quotes ...fquery.Quote) error {
 	if len(quotes) == 0 {
 		return nil
 	}
 
-	trans, err := c.gorp.Begin()
+	tx, err := c.gorp.Begin()
 	if err != nil {
 		return err
 	}
 
 	for _, quote := range quotes {
 		vprintln("merging quote: ", quote.Symbol)
-		count, err := c.gorp.Update(&quote)
+		count, err := tx.Update(&quote)
 		if err == nil && count == 1 {
 			continue
 		}
@@ -342,13 +341,13 @@ func (c *SqliteCache) mergeQuotes(quotes ...fquery.Quote) error {
 			"err:", err, ", count:", count)
 
 		/* update didn't work, so try insert */
-		err = c.gorp.Insert(&quote)
+		err = tx.Insert(&quote)
 		if err != nil {
 			vprintln("sqlitecache: error while INSERTing", err)
 		}
 	}
 
-	return trans.Commit()
+	return tx.Commit()
 }
 
 func (c *SqliteCache) mergeHistory(hists ...fquery.Hist) error {
