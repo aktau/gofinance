@@ -40,6 +40,14 @@ func main() {
 		"VEUR.AS",
 		"VFEM.AS",
 		"BELG.BR",
+		"UMI.BR",
+		"SOLB.BR",
+		"KBC.BR",
+		"DIE.BR",
+		"DL.BR",
+		"BEKB.BR",
+		"ACKB.BR",
+		"ABI.BR",
 	}
 
 	sqlitecache.VERBOSITY = 0
@@ -127,11 +135,12 @@ func calc(src fquery.Source, symbols ...string) {
 		upDir := r.LastTradePrice >= r.PreviousClose
 		upVal := r.LastTradePrice - r.PreviousClose
 		upPerc := upVal / r.PreviousClose * 100
-		fmt.Printf("name: %v (%v), %v %v %v\n",
+		fmt.Printf("name: %v (%v), %v %v %v (chart: %v)\n",
 			r.Name, r.Symbol,
 			binary(fmt.Sprintf("%+.2f", upVal), upDir),
 			binary(fmt.Sprintf("%+.2f%%", upPerc), upDir),
-			binary(arrow(upDir), upDir))
+			binary(arrow(upDir), upDir),
+			yahoofinance.GenChartUrl(r.Symbol, yahoofinance.Year2, nil))
 
 		if r.Bid != 0 && r.Ask != 0 {
 			bidAskSpreadPerc := (r.Ask - r.Bid) / r.Bid
