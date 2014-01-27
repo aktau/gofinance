@@ -17,8 +17,8 @@ func main() {
 
 	var src fquery.Source
 	// s := yahoofinance.NewCvs()
-	src = yahoofinance.NewYql()
 	src = bloomberg.New()
+	src = yahoofinance.NewYql()
 
 	// symbols := []string{
 	// 	"VEUR.AS",
@@ -85,6 +85,7 @@ func hist(src fquery.Source, symbols ...string) {
 		return
 	}
 
+	fmt.Println("Printing history for symbols:", symbols)
 	for symb, hist := range res {
 		fmt.Println(symb)
 		fmt.Println("===========")
