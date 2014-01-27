@@ -21,6 +21,16 @@ It's logically composed of a few submodules:
 - app: a sample application you can compile and run (go build), to see
   what you can do with fquery and its modules.
 
+**NOTE**: This is still early days for gofinance, very rough around the
+edges. Pull requests welcome!
+
+Screenshot
+==========
+
+Everybody loves screenshots, even of console apps.
+
+![Fancy screenshot of gofinance in action](http://aktau.github.io/gofinance/images/screen-01.png)
+
 Requirements
 ============
 
