@@ -25,7 +25,7 @@ const (
 	MaxPeriod             = "my"
 )
 
-func GenChartUrl(symbol string, timespan string, compare []string) string {
+func GenChartUrl(symbol string, period ChartPeriod, compare []string) string {
 	const (
 		ChartLine   = "l"
 		ChartBar    = "b"
@@ -34,7 +34,7 @@ func GenChartUrl(symbol string, timespan string, compare []string) string {
 
 	v := url.Values{}
 	v.Set("s", symbol)
-	v.Set("t", timespan)
+	v.Set("t", string(period))
 	v.Set("c", strings.Join(compare, ","))
 	v.Set("q", ChartLine)
 
