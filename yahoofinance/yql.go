@@ -220,14 +220,14 @@ func yqlQuotes(symbols []string) ([]fquery.Quote, error) {
 
 func yqlHist(symbols []string, start *time.Time, end *time.Time) (map[string]fquery.Hist, error) {
 	if start == nil {
-		t := time.Date(1900, time.January, 1, 0, 0, 0, 0, time.UTC)
+		t := time.Date(2000, time.January, 1, 0, 0, 0, 0, time.UTC)
 		start = &t
 	}
 	startq := fmt.Sprintf(` AND startDate = "%v-%v-%v"`,
 		start.Year(), int(start.Month()), start.Day())
 
 	if end == nil {
-		t := time.Date(2099, time.January, 1, 0, 0, 0, 0, time.UTC)
+		t := time.Now()
 		end = &t
 	}
 	endq := fmt.Sprintf(` AND endDate = "%v-%v-%v"`,
@@ -343,8 +343,19 @@ func addHistToMap(m map[string]fquery.Hist) func(workPair) {
 		/* ugh, no generics, at least I could keep it to the parts that
 		 * aren't going to happen much */
 		if w, ok := work.Result.(histResult); ok {
+			entries := w.Entries()
+			var (
+				from time.Time
+				to   time.Time
+			)
+			if len(entries) > 0 {
+				from = entries[len(entries)-1].Date.GetTime()
+				to = entries[0].Date.GetTime()
+			}
 			m[work.Symbol] = fquery.Hist{
 				Symbol:  work.Symbol,
+				From:    from,
+				To:      to,
 				Entries: w.Entries(),
 			}
 		}
