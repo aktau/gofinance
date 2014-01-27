@@ -68,12 +68,16 @@ type YqlJsonQuote struct {
 func (q *YqlJsonQuote) Process() {
 	/* day and year range */
 	pc := strings.Split(q.DaysRangeRaw, " - ")
-	q.DayLow, _ = strconv.ParseFloat(pc[0], 64)
-	q.DayHigh, _ = strconv.ParseFloat(pc[1], 64)
+	if len(pc) == 2 {
+		q.DayLow, _ = strconv.ParseFloat(pc[0], 64)
+		q.DayHigh, _ = strconv.ParseFloat(pc[1], 64)
+	}
 
-	pc = strings.Split(q.YearRangeRaw, " - ")
-	q.YearLow, _ = strconv.ParseFloat(pc[0], 64)
-	q.YearHigh, _ = strconv.ParseFloat(pc[1], 64)
+	if len(pc) == 2 {
+		pc = strings.Split(q.YearRangeRaw, " - ")
+		q.YearLow, _ = strconv.ParseFloat(pc[0], 64)
+		q.YearHigh, _ = strconv.ParseFloat(pc[1], 64)
+	}
 }
 
 type YqlJsonMeta struct {
