@@ -31,6 +31,11 @@ func revmap(orig map[string]string) map[string]string {
 }
 
 func yahooToBloomberg(symbol string) string {
+	/* symbols with = are assumed to be currencies */
+	if strings.HasSuffix(symbol, "=X") {
+		return strings.TrimSuffix(symbol, "=X") + ":CUR"
+	}
+
 	/* symbols without a specific exchange are assumed to be US-based */
 	if !strings.Contains(symbol, ".") {
 		return symbol + ":US"
@@ -40,6 +45,11 @@ func yahooToBloomberg(symbol string) string {
 }
 
 func bloombergToYahoo(symbol string) string {
+	/* symbols with = are assumed to be currencies */
+	if strings.HasSuffix(symbol, ":CUR") {
+		return strings.Split(symbol, ":")[0] + "=X"
+	}
+
 	/* US symbols are special since yahoo doesn't suffix them, but bloomberg
 	 * does */
 	if strings.Contains(symbol, ":US") {
