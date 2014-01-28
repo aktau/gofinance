@@ -21,20 +21,21 @@ type bloomHist struct {
 
 func getHist(symbol string) (*fquery.Hist, error) {
 	url := fmt.Sprintf(HIST_URL, "1Y", symbol)
+	vprintln("bloomberg: fetching historical, ", url)
 	resp, err := http.Get(url)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("bloomberg: %v, error while fetching, url: %v, error: %v", symbol, url, err)
 	}
 	defer resp.Body.Close()
 
 	dec := json.NewDecoder(resp.Body)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("bloomberg: %v, json new decoder error, url: %v, error: %v", symbol, url, err)
 	}
 
 	var v bloomHist
 	if err := dec.Decode(&v); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("bloomberg: %v, json decode error, url: %v, error: %v", symbol, url, err)
 	}
 
 	var (
