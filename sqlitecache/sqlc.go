@@ -246,7 +246,6 @@ func (c *SqliteCache) Hist(symbols []string) (map[string]fquery.Hist, error) {
 			for _, e := range results {
 				/* detect transitions between symbols */
 				if cursymb != e.Symbol {
-					fmt.Println("CHANGING SYMBOL:", cursymb, e.Symbol)
 					/* if this is not the first iteration, finish up the hist
 					 * entry we've been working on */
 					if len(cursymb) != 0 {
