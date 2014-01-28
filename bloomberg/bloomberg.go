@@ -70,7 +70,7 @@ func (s *Source) Hist(symbols []string) (map[string]fquery.Hist, error) {
 	for i := 0; i < len(symbols); i++ {
 		select {
 		case err := <-errors:
-			fmt.Println("bloomberg: error while fetching,", err)
+			fmt.Println("bloomberg: hist error,", err)
 		case r := <-results:
 			r.Symbol = bloombergToYahoo(r.Symbol)
 			m[r.Symbol] = *r
