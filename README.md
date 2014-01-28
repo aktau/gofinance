@@ -5,7 +5,13 @@ Financial information retrieval and munging, will support multiple
 sources (Yahoo Finance, Bloomberg, ...). Written in Go, based in parts
 on [richie rich](https://github.com/aantix/richie_rich).
 
-It's logically composed of a few submodules:
+The idea is to automate security analysis on a large scale. For example,
+it should be possible (in the future) to search for stock that has a
+good dividend yield, along with a good track record of increasing
+dividend, good P/E-ratio, et cetera. This should be implemented as a
+separate package that only relies on the **fquery** interfaces.
+
+Gofinance is logically composed of a few submodules:
 
 - fquery: provides an interface for querying a financial source
   (`fquery.Source`), but doesn't implement any Source itself.
@@ -57,8 +63,25 @@ Used libraries
 
 Todo
 ====
+- find a way to request echange rates (historical rates as well), to be
+  able to indicate when's a good time to buy foreign securities. (it
+  appears both Yahoo and Bloomberg have these as pseudo-securities:
+  - Yahoo: EURUSD=X -> http://chart.finance.yahoo.com/z?p=m50%2Cm200&q=l&s=VFEM.AS&t=2y&c=VYM,EURUSD=X)
+  - Bloomberg: EURUSD:CUR -> http://www.bloomberg.com/quote/EURUSD:CUR
+  - Alt: http://www.exchange-rates.org/history/EUR/USD/T
+  - StackExchange: http://quant.stackexchange.com/questions/141/what-data-sources-are-available-online
 - fallback to Yahoo Finance CSV when the YQL interface response with
   things like "too many instructions executed".
+- morningstar: scrape morningstar (all versions) as a ternary source,
+  then we can be pretty sure that the app stays working for a while even
+  if a source changes its format. Pull requests can then be submitted to
+  fix the source. A couple of things Morningstar has that I haven't been
+  able to find in others:
+  - It has industry and regional data for funds/ETF's, which could
+    become very handy when factoring in currency risk and portfolio
+    exposure.
+  - It lists the funds' own benchmark index and a Morningstar assigned
+    one. We could make neat comparisons with those.
 - bloomberg: Funds/ETFs have a different layout than normal stocks on
   Bloomberg, adapt to that.
 - Combine data from Yahoo Finance and Bloomberg. (this should be
@@ -129,11 +152,11 @@ Todo
   estimates, source tax has already been incorporated! Let's take VUSA
   as an example, a Vanguard tracker for the S&P 500, domiciled in
   Ireland. The US-based variant of this is VOO.  When you look at the
-  yield difference between the two you'll notice that VOO has a yield
-  of 2.09%, while VUSA has a yield of 1.63%. Why is this less? Because
-  the dividend withholding tax has already been deducted (that's 15%
-  because Ireland has a treaty with the US). Yet there's bound to be
-  some extra cost, as a 15% tax rate would lead to a VUSA yield of 2.09%
+  yield difference between the two you'll notice that VOO has a yield of
+  2.09%, while VUSA has a yield of 1.63%. Why is this less? Because the
+  dividend withholding tax has already been deducted (that's 15% because
+  Ireland has a treaty with the US). Yet there's bound to be some extra
+  cost, as a 15% tax rate would lead to a VUSA yield of 2.09%
   * 0.85 = 1.78%, but the reality says it's 1.63% (which corresponds to
   a "taxation" of 23%). This sounds bad for the european investor. But,
   there's a catch, the US yield is gross, so one has to deduct 30% WHT.
@@ -155,9 +178,9 @@ Todo
   - no heavy drops in share price (we can disentangle the "losing
     company" case from the "bear market" case by comparing with the
     general direction of an index, be the index as representative as
-    possible).
-  Put shortly, fundamentals. One needs to make sure that the dividend is
-  not going to be slashed and send the yield to kingdom come.
+    possible).  Put shortly, fundamentals. One needs to make sure that
+    the dividend is not going to be slashed and send the yield to
+    kingdom come.
 
 Copyright
 =========

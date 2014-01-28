@@ -46,6 +46,7 @@ func main() {
 		"BEKB.BR",
 		"ACKB.BR",
 		"ABI.BR",
+		"EURUSD=X",
 	}
 
 	sqlitecache.VERBOSITY = 0
