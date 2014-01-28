@@ -23,8 +23,8 @@ type Quote struct {
 	AvgDailyVolume int64 /* avg amount of shares traded */
 
 	/* dividend & related */
-	PeRatio          float64
-	EarningsPerShare float64
+	PeRatio          float64   /* Price / EPS */
+	EarningsPerShare float64   /* (net income - spec.dividends) / avg.  outstanding shares */
 	DividendPerShare float64   /* total (non-special) dividend payout / total amount of shares */
 	DividendYield    float64   /* annual div. per share / price per share */
 	DividendExDate   time.Time /* last dividend payout date */
@@ -39,6 +39,20 @@ type Quote struct {
 	YearLow, YearHigh float64
 
 	Ma50, Ma200 float64 /* 200- and 50-day moving average */
+}
+
+/* will try to calculate the dividend payout ratio, if possible,
+ * otherwise returns 0 */
+func (q *Quote) DivPayoutRatio() float64 {
+	/* total dividends / net income (same period, mostly 1Y):
+	 * TODO: implement this (first implement historical data
+	 * aggregation) */
+
+	/* DPS / EPS */
+	if q.DividendPerShare != 0 && q.EarningsPerShare != 0 {
+		return q.DividendPerShare / q.EarningsPerShare
+	}
+	return 0
 }
 
 type Hist struct {

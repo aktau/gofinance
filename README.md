@@ -63,11 +63,12 @@ Used libraries
 
 Todo
 ====
+- classify the dividend level of stock, e.g.: aristocrat, ...
 - find a way to request echange rates (historical rates as well), to be
   able to indicate when's a good time to buy foreign securities. (it
   appears both Yahoo and Bloomberg have these as pseudo-securities:
   - Yahoo: EURUSD=X -> http://chart.finance.yahoo.com/z?p=m50%2Cm200&q=l&s=VFEM.AS&t=2y&c=VYM,EURUSD=X)
-  - Bloomberg: EURUSD:CUR -> http://www.bloomberg.com/quote/EURUSD:CUR
+  - Bloomberg: EURUSD:CUR -> http://www.bloomberg.com/quote/EURUSD:CUR (already working)
   - Alt: http://www.exchange-rates.org/history/EUR/USD/T
   - StackExchange: http://quant.stackexchange.com/questions/141/what-data-sources-are-available-online
 - fallback to Yahoo Finance CSV when the YQL interface response with
