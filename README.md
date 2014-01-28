@@ -53,7 +53,7 @@ Used libraries
 | [code.google.com/p/go.net/html](code.google.com/p/go.net/html) | HTML parser | MIT |
 | [github.com/mattn/go-sqlite3](github.com/mattn/go-sqlite3)| Database driver for SQLite | MIT |
 | [github.com/coopernurse/gorp](github.com/coopernurse/gorp) | ORM(ish) library| MIT |
-| [github.com/wsxiaoys/terminal](github.com/wsxiaoys/terminal) | Ansi terminal colours | BSD (3-clause) |
+| [github.com/mgutz/ansi](github.com/mgutz/ansi) | Ansi terminal colours | MIT |
 
 Todo
 ====

@@ -6,8 +6,6 @@ import (
 	"github.com/aktau/gofinance/fquery"
 	"github.com/aktau/gofinance/sqlitecache"
 	"github.com/aktau/gofinance/yahoofinance"
-	"github.com/wsxiaoys/terminal"
-	"github.com/wsxiaoys/terminal/color"
 	"math"
 	"time"
 )
@@ -144,43 +142,49 @@ func calc(src fquery.Source, symbols ...string) {
 
 		if r.Bid != 0 && r.Ask != 0 {
 			bidAskSpreadPerc := (r.Ask - r.Bid) / r.Bid
-			bidAskPrint := binary(fmt.Sprintf("%.3f%%", bidAskSpreadPerc*100), bidAskSpreadPerc < maxBidAskSpreadPerc)
-			terminal.Stdout.Colorf("bid/ask: @m%v@|/@m%v@|, spread: @m%.3f@| (%v)\n", r.Bid, r.Ask, r.Ask-r.Bid, bidAskPrint)
+			bidAskPrint := binaryfp(bidAskSpreadPerc*100, bidAskSpreadPerc < maxBidAskSpreadPerc)
+			fmt.Printf("bid/ask: %v/%v, spread: %v (%v)\n",
+				numberf(r.Bid), numberf(r.Ask), numberf(r.Ask-r.Bid), bidAskPrint)
 			if bidAskSpreadPerc < maxBidAskSpreadPerc {
-				fmt.Printf("if you want to buy this stock, place a %v at about %v\n", green("limit order"), green("%.2f", (r.Ask+r.Bid)/2))
+				fmt.Printf("if you want to buy this stock, place a %v at about %v\n", green("limit order"), greenf((r.Ask+r.Bid)/2))
 			} else {
-				fmt.Println(red("be cautious, the spread of this stock is rather high"))
+				fmt.Println(redu("CAUTION:"), "the spread of this stock is rather high")
 			}
 		}
 
-		terminal.Stdout.Colorf("prevclose/open/lasttrade: @{m}%v@{|}/@{m}%v@{|}/@{m}%v@{|}\n",
-			r.PreviousClose, r.Open, r.LastTradePrice)
-		terminal.Stdout.Colorf("day low/high: @{m}%v@{|}/@{m}%v@{|} (@m%.2f@|)\n", r.DayLow, r.DayHigh, r.DayHigh-r.DayLow)
-		terminal.Stdout.Colorf("year low/high: @{m}%v@{|}/@{m}%v@{|} (@m%.2f@|)\n", r.YearLow, r.YearHigh, r.YearHigh-r.YearLow)
-		terminal.Stdout.Colorf("moving avg. 50/200: @{m}%v@{|}/@{m}%v@{|}\n", r.Ma50, r.Ma200)
-		DivYield := binary(fmt.Sprintf("%.2f%%", r.DividendYield*100), r.DividendYield > minDivYield)
-		terminal.Stdout.Colorf("last ex-dividend: @{m}%v@{|}, div. per share: @{m}%v@{|}, div. yield: %v,\n earnings per share: @m%.2f@|, dividend payout ratio: @m%.2f@|\n",
-			r.DividendExDate.Format("02/01"), r.DividendPerShare, DivYield, r.EarningsPerShare, r.DividendPerShare/r.EarningsPerShare)
-		terminal.Stdout.Colorf("You would need to buy @{m}%v@{|} (€ @{m}%.2f@{|}) shares of this stock to reach a transaction cost below %v%%\n",
-			amountOfsharesForLowTxCost, amountOfsharesForLowTxCost*price, desiredTxCostPerc*100)
+		fmt.Printf("prevclose/open/lasttrade: %v/%v/%v\n",
+			numberf(r.PreviousClose), numberf(r.Open), numberf(r.LastTradePrice))
+		fmt.Printf("day low/high: %v/%v (%v)\n", numberf(r.DayLow), numberf(r.DayHigh), numberf(r.DayHigh-r.DayLow))
+		fmt.Printf("year low/high: %v/%v (%v)\n", numberf(r.YearLow), numberf(r.YearHigh), numberf(r.YearHigh-r.YearLow))
+		fmt.Printf("moving avg. 50/200: %v/%v\n", numberf(r.Ma50), numberf(r.Ma200))
+		divYield := binaryfp(r.DividendYield*100, r.DividendYield > minDivYield)
+		fmt.Printf("last ex-dividend: %v, div. per share: %v, div. yield: %v,\n earnings per share: %v, dividend payout ratio: %v\n",
+			r.DividendExDate.Format("02/01"), numberf(r.DividendPerShare), divYield, numberf(r.EarningsPerShare), numberf(r.DividendPerShare/r.EarningsPerShare))
+		fmt.Printf("You would need to buy %v (€ %v) shares of this stock to reach a transaction cost below %v%%\n",
+			greenf(amountOfsharesForLowTxCost), greenf(amountOfsharesForLowTxCost*price), desiredTxCostPerc*100)
 		if r.PeRatio != 0 {
-			terminal.Stdout.Colorf("The P/E-ratio is @m%.2f@|, ", r.PeRatio)
+			// terminal.Stdout.Colorf("The P/E-ratio is @m%.2f@|, ", r.PeRatio)
+			fmt.Println("The P/E-ratio is %v, ", numberf(r.PeRatio))
 			switch {
 			case 0 <= r.PeRatio && r.PeRatio <= 10:
-				terminal.Stdout.Colorf("this stock is either @gundervalued@|" +
-					"or the @rmarket thinks its earnings are going to" +
-					"decline@|, either that or the companies earnings are @gabove their historic trends@|.")
+				underv := green("undervalued")
+				decline := red("market thinks its earnings are going to decline")
+				above := green("above the historic trend for this company")
+				fmt.Printf("this stock is either %v or the %v, either that or the companies earnings are %v\n", underv, decline, above)
 			case 11 <= r.PeRatio && r.PeRatio <= 17:
-				terminal.Stdout.Colorf("this usually represents fair value.")
+				fmt.Println("this usually represents fair value.", green("fair value"))
 			case 18 <= r.PeRatio && r.PeRatio <= 25:
-				terminal.Stdout.Colorf("either the stock is @rovervalued@| or the" +
-					" @gearnings have increased since the last earnings@|" +
-					" figure was published. The stock may also be a growth stock with" +
-					" @rearnings expected to increase substantially in the future@|.")
+				overv := red("overvalued")
+				incrlast := green("earnings have increased since the last earnings call")
+				increxp := green("earnings expected to increase substantially in the future")
+				fmt.Printf("either the stock is %v or the %v figure was published. The stock may also be a growth stock with %v.\n",
+					overv, incrlast, increxp)
 			case 26 <= r.PeRatio:
-				terminal.Stdout.Colorf("Either we're in a @rbubble@|, or the" +
-					" company has @gvery high expected future earnings@|" +
-					" or @rthis years earnings have been exceptionally low@|.")
+				bubble := red("bubble")
+				earnings := green("very high expected earnings")
+				low := red("this years earnings have been exceptionally low (unlikely)")
+				fmt.Printf("Either we're in a %v, or the company has %v, or %v\n",
+					bubble, earnings, low)
 			}
 			fmt.Println()
 		}
@@ -188,9 +192,9 @@ func calc(src fquery.Source, symbols ...string) {
 		if r.Ma200 != 0 {
 			fmt.Print("Richie Rich thinks this is in a ")
 			if wouldRichieRichBuy(r) {
-				terminal.Stdout.Colorf("@{g}BUY@{|}")
+				fmt.Print(green("BUY"))
 			} else {
-				terminal.Stdout.Colorf("@{r}SELL@{|}")
+				fmt.Print(red("SELL"))
 			}
 			fmt.Println(" position")
 		}
@@ -230,33 +234,7 @@ func wouldRichieRichBuy(res fquery.Quote) bool {
 	return res.PreviousClose > res.Ma200
 }
 
-/* prints either green or red text to the screen, depending
- * on decision. */
-func binary(text string, decision bool) string {
-	col := "@g"
-	if !decision {
-		col = "@r"
-	}
-	return color.Sprint(col, text)
-}
-
-func green(format string, a ...interface{}) string {
-	return color.Sprintf("@g"+format, a...)
-}
-
-func red(format string, a ...interface{}) string {
-	return color.Sprintf("@r"+format, a...)
-}
-
-func arrow(decision bool) string {
-	if decision {
-		return "↑"
-	} else {
-		return "↓"
-	}
-}
-
-/* returns the first non-0 float */
+/* returns the first non-zero float */
 func nvl(xs ...float64) float64 {
 	for _, x := range xs {
 		if x != 0 {
