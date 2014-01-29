@@ -1,4 +1,4 @@
-app/config.yml
+config.yml
 go-app
 *.db
 
