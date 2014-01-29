@@ -252,4 +252,6 @@ Todo
 Copyright
 =========
 
-Copyright (c) 2014, Nicolas Hillegeer. All rights reserved.
+Copyright (c) 2014, The gofinance Authors. All rights reserved.
+
+See the included AUTHORS file to see who the gofinance authors are.
