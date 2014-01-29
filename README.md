@@ -49,16 +49,49 @@ Building/installing
 First, install Go 1.1+, on UNIX-like systems you can do this from the
 commandline
 
+OSX
+---
+
+Using homebrew
+
 ```sh
-# OSX, using homebrew
 $ brew install go
+```
 
+Linux/FreeBSD
+-------------
+
+Using your favourite package manager, for example
+
+```sh
 # debian/ubuntu
-$ sudo apt-get install golang
+$ apt-get install golang
 
-# other distributions
-...
+# fedora core
+$ yum install golang
 
+# arch
+$ pacman -S go
+
+# other distributions/UNIXes
+$ ...
+```
+
+Windows
+-------
+
+On windows you'll have to install the go binaries via a normal
+installer. Keep in mind that the windows support is a bit flaky at the
+moment because gofinance uses colors in the terminal as indicators for
+numbers et cetera. These give strange results in `cmd.exe`. That said,
+the basic app should work fine.
+
+Setup
+-----
+
+If you haven't already done so:
+
+```sh
 # setup a $GOPATH
 $ mkdir ~/go
 $ export GOPATH=/my/home/path/go
@@ -67,11 +100,6 @@ $ export GOPATH=/my/home/path/go
 # to it to run go binaries
 $ export PATH=$PATH:$GOPATH/bin
 ```
-
-On windows you'll have to install the go binaries via a normal
-installer. Keep in mind that the windows support is a bit flaky at the
-moment because gofinance uses colors in the terminal as indicators for
-numbers et cetera. There are certain not to work well on windows.
 
 After all that you can get the demonstration app (which will pull in all
 the necessary libraries automatically.
