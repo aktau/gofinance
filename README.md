@@ -43,6 +43,46 @@ Requirements
 - Golang 1.1 (I think, I'm developing on Golang 1.2, but not using any
   features new to 1.2).
 
+Building/installing
+===================
+
+First, install Go 1.1+, on UNIX-like systems you can do this from the
+commandline
+
+```sh
+# OSX, using homebrew
+$ brew install go
+
+# debian/ubuntu
+$ sudo apt-get install golang
+
+# other distributions
+...
+
+# setup a $GOPATH
+$ mkdir ~/go
+$ export GOPATH=/my/home/path/go
+
+# optional, add $GOPATH/bin to your $PATH so you don't have to navigate
+# to it to run go binaries
+$ export PATH=$PATH:$GOPATH/bin
+```
+
+On windows you'll have to install the go binaries via a normal
+installer. Keep in mind that the windows support is a bit flaky at the
+moment because gofinance uses colors in the terminal as indicators for
+numbers et cetera. There are certain not to work well on windows.
+
+After all that you can get the demonstration app (which will pull in all
+the necessary libraries automatically.
+
+```sh
+$ go get github.com/aktau/gofinance/gofinance
+
+# run the app, if you've added $GOPATH/bin to the PATH
+$ gofinance
+```
+
 Features
 ========
 
