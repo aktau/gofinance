@@ -43,14 +43,15 @@ Requirements
 - Golang 1.1 (I think, I'm developing on Golang 1.2, but not using any
   features new to 1.2).
 
-Building/installing
-===================
+How to get it?
+==============
+
+## Installing Go (if you dont' have it yet)
 
 First, install Go 1.1+, on UNIX-like systems you can do this from the
 commandline
 
-OSX
----
+### OSX
 
 Using homebrew
 
@@ -58,8 +59,7 @@ Using homebrew
 $ brew install go
 ```
 
-Linux/FreeBSD
--------------
+### Linux/FreeBSD
 
 Using your favourite package manager, for example
 
@@ -77,8 +77,7 @@ $ pacman -S go
 $ ...
 ```
 
-Windows
--------
+### Windows
 
 On windows you'll have to install the go binaries via a normal
 installer. Keep in mind that the windows support is a bit flaky at the
@@ -86,10 +85,9 @@ moment because gofinance uses colors in the terminal as indicators for
 numbers et cetera. These give strange results in `cmd.exe`. That said,
 the basic app should work fine.
 
-Setup
------
+## Install the app
 
-If you haven't already done so:
+If you haven't already done so, setup $GOPATH and $PATH:
 
 ```sh
 # setup a $GOPATH
