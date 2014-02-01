@@ -129,6 +129,11 @@ Used libraries
 
 Todo
 ====
+- look at (and possibly implement) some techniques from others packages:
+  - http://make.rafflecopter.com/side-project-jon-haskell.html
+  - [bateman](https://github.com/fearofcode/bateman)
+  - [tybee](https://github.com/yanatan16/tybee#design)
+  - [golang-spsa](https://github.com/yanatan16/golang-spsa)
 - classify the dividend level of stock, e.g.: aristocrat, ...
 - find a way to request echange rates (historical rates as well), to be
   able to indicate when's a good time to buy foreign securities. (it
