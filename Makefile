@@ -13,16 +13,19 @@ GITHUB_RELEASE := github-release
 # otherwise you're pushing a binary that doesn't belong with the tag...
 LAST_TAG := $(shell git describe --abbrev=0 --tags)
 
-UPLOAD_CMD = $(GITHUB_RELEASE) upload -u $(USER) -r $(EXECUTABLE) -t $(LAST_TAG) -n $(subst /,-,$(FILE)) -f bin/$(FILE)
+UPLOAD_CMD = $(GITHUB_RELEASE) upload -u $(GITHUB_USER) -r $(GITHUB_REPO) -t $(LAST_TAG) -n $(subst /,-,$(FILE)) -f bin/$(FILE)
 
 # all executables to build when pushing releases, only include the amd64
 # binaries, otherwise the github release will become too big
+# NOTE: unfortunately, as of go 1.2, it's still difficult to cross-compile
+# libraries that use cgo (in this case: mattn/sqlite), so I'm only doing the
+# darwin build as of right now...
 UNIX_EXECUTABLES := \
 	darwin/amd64/$(EXECUTABLE) \
-	freebsd/amd64/$(EXECUTABLE) \
-	linux/amd64/$(EXECUTABLE)
+	# freebsd/amd64/$(EXECUTABLE)
+	# linux/amd64/$(EXECUTABLE)
 WIN_EXECUTABLES := \
-	windows/amd64/$(EXECUTABLE).exe
+	# windows/amd64/$(EXECUTABLE).exe
 
 COMPRESSED_EXECUTABLES=$(UNIX_EXECUTABLES:%=%.tar.bz2) $(WIN_EXECUTABLES:%.exe=%.zip)
 COMPRESSED_EXECUTABLE_TARGETS=$(COMPRESSED_EXECUTABLES:%=bin/%)
@@ -60,7 +63,7 @@ bin/windows/amd64/$(EXECUTABLE):
 	zip "$@" "$<"
 
 # git tag -a v$(RELEASE) -m 'release $(RELEASE)'
-release: bin/tmp/$(EXECUTABLE) $(COMPRESSED_EXECUTABLE_TARGETS)
+release: $(COMPRESSED_EXECUTABLE_TARGETS)
 	@echo Tagging...
 	git push && git push --tags
 	@echo Making github release...
