@@ -5,10 +5,34 @@ import (
 	"github.com/aktau/gofinance/bloomberg"
 	"github.com/aktau/gofinance/fquery"
 	"github.com/aktau/gofinance/sqlitecache"
+	"github.com/aktau/gofinance/util"
 	"github.com/aktau/gofinance/yahoofinance"
 	"math"
+	"os"
+	"path/filepath"
 	"time"
 )
+
+const (
+	CONFIG_SUBPATH = ".gofinance"
+	DB_FILENAME    = "gofinance.db"
+)
+
+func ConfigDir() string {
+	if path := os.Getenv("GOFINANCE_DIR"); path != "" {
+		return path
+	} else {
+		return util.Home() + "/" + CONFIG_SUBPATH
+	}
+}
+
+func DbPath() string {
+	if path := os.Getenv("GOFINANCE_DB"); path != "" {
+		return path
+	} else {
+		return ConfigDir() + "/" + DB_FILENAME
+	}
+}
 
 func main() {
 	fmt.Printf("welcome to gofinance %v.%v.%v\n", MAJ_VERSION, MIN_VERSION, MIC_VERSION)
@@ -51,11 +75,11 @@ func main() {
 
 	sqlitecache.VERBOSITY = 0
 	bloomberg.VERBOSITY = 2
-	cache, err := sqlitecache.New("./sqlite.db", src)
+
+	cache, err := newCache(src)
 	if err != nil {
-		fmt.Printf("WARNING: could not initialize cache (%v), going to use pure source\n", err)
+		fmt.Printf("WARNING: could not initialize cache (%v), going to use pure source\n\t", err)
 	} else {
-		fmt.Println("cache initialized")
 		cache.SetQuoteExpiry(5 * time.Minute)
 		defer cache.Close()
 		src = cache
@@ -64,6 +88,25 @@ func main() {
 	// divhist(src)
 	// hist(src, symbols...)
 	calc(src, symbols...)
+}
+
+/* attempts to create a cached version of the passed-in source */
+func newCache(src fquery.Source) (fquery.Cache, error) {
+	/* get the path and try to create it if it doesn't exist */
+	dbpath := DbPath()
+	dbdir := filepath.Dir(dbpath)
+	if err := os.MkdirAll(dbdir, 0755); err != nil {
+		return nil, err
+	}
+
+	/* dir exists, now open the db */
+	cache, err := sqlitecache.New(dbpath, src)
+	if err != nil {
+		return nil, err
+	}
+
+	fmt.Println("cache initialized, db located at:", dbpath)
+	return cache, nil
 }
 
 func divhist(src fquery.Source) {

@@ -93,12 +93,3 @@ type Source interface {
 
 	fmt.Stringer
 }
-
-type Cache interface {
-	Source
-
-	SetQuoteExpiry(dur time.Duration)
-
-	HasQuote(symbol string) bool
-	HasHist(symbol string, start *time.Time, end *time.Time) bool
-}
