@@ -82,8 +82,12 @@ $(EXECUTABLE): dep
 	@echo $(PWD) $(shell pwd)
 	mv "$(APP_DIR)/$@" "./$@"
 
+# really ugly hack, I know, but "go install" doesn't let us supply
+# an output arguments
 install:
-	cd $(APP_DIR) && go install
+	mv $(APP_DIR) ./gofinance
+	cd gofinance && go install
+	mv ./gofinance $(APP_DIR)
 
 clean:
 	rm go-app || true
