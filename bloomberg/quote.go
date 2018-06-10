@@ -1,13 +1,14 @@
 package bloomberg
 
 import (
-	"code.google.com/p/go.net/html"
 	"fmt"
-	"github.com/aktau/gofinance/fquery"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/aktau/gofinance/fquery"
+	"golang.org/x/net/html"
 )
 
 type bloomQuote struct {
