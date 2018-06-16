@@ -2,8 +2,9 @@ package fquery
 
 import (
 	"fmt"
-	"github.com/aktau/gofinance/util"
 	"time"
+
+	"github.com/aktau/gofinance/util"
 )
 
 const (
@@ -32,7 +33,7 @@ type Quote struct {
 	/* price & derived */
 	Bid, Ask              float64
 	Open, PreviousClose   float64
-	LastTradePrice        float64
+	LastTradePrice        float64 // The last trace price and the closing price are usually the same thing. If they vary, the closing price should be used as it refers to the last 'on market' traded price.
 	Change, ChangePercent float64
 
 	DayLow, DayHigh   float64
