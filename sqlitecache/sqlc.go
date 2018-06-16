@@ -3,15 +3,16 @@ package sqlitecache
 import (
 	"database/sql"
 	"fmt"
-	"github.com/aktau/gofinance/fquery"
-	"github.com/aktau/gofinance/util"
-	"github.com/coopernurse/gorp"
-	_ "github.com/mattn/go-sqlite3"
 	"log"
 	"os"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/aktau/gofinance/fquery"
+	"github.com/aktau/gofinance/util"
+	"github.com/coopernurse/gorp"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 /* a version of the fquery.HistEntry struct with a symbol appended,
@@ -133,22 +134,15 @@ func (c *SqliteCache) Quote(symbols []string) ([]fquery.Quote, error) {
 		}
 	}
 
-	/* fetch all missing items, store in cache and add to the results we
-	 * already got from the cache */
+	// Fetch all missing items, store in cache and add to the results we already
+	// got from the cache. If there's an error, still try to add as many
+	// non-erroneous results as possible.
 	fetched, err := c.Source.Quote(toFetch)
-	if err != nil {
-		vprintf("sqlitecache: error while fetching either of %v: %v\n", toFetch, err)
-		return results, nil
-	}
-
-	err = c.mergeQuotes(fetched...)
-	if err != nil {
+	results = append(results, fetched...)
+	if err := c.mergeQuotes(fetched...); err != nil {
 		vprintf("sqlitecache: error, could not merge quotes of %v into cache, %v\n", toFetch, err)
 	}
-
-	results = append(results, fetched...)
-
-	return results, nil
+	return results, err
 }
 
 /* I consider this to be an extremely dirty function, it should be split up
