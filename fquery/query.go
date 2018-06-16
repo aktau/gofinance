@@ -31,10 +31,9 @@ type Quote struct {
 	DividendExDate   time.Time /* last dividend payout date */
 
 	/* price & derived */
-	Bid, Ask              float64
-	Open, PreviousClose   float64
-	LastTradePrice        float64 // The last trace price and the closing price are usually the same thing. If they vary, the closing price should be used as it refers to the last 'on market' traded price.
-	Change, ChangePercent float64
+	Bid, Ask            float64
+	Open, PreviousClose float64
+	LastTradePrice      float64 // The last trace price and the closing price are usually the same thing. If they vary, the closing price should be used as it refers to the last 'on market' traded price.
 
 	DayLow, DayHigh   float64
 	YearLow, YearHigh float64
