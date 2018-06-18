@@ -6,7 +6,6 @@ import (
 	"github.com/aktau/gofinance/fquery"
 	"github.com/aktau/gofinance/sqlitecache"
 	"github.com/aktau/gofinance/util"
-	"github.com/aktau/gofinance/yahoofinance"
 	"math"
 	"os"
 	"path/filepath"
@@ -38,9 +37,7 @@ func main() {
 	fmt.Printf("welcome to gofinance %v.%v.%v\n", MAJ_VERSION, MIN_VERSION, MIC_VERSION)
 
 	var src fquery.Source
-	// s := yahoofinance.NewCvs()
 	src = bloomberg.New()
-	src = yahoofinance.NewYql()
 
 	// symbols := []string{
 	// 	"VEUR.AS",
