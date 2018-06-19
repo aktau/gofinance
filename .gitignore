@@ -1,3 +1,6 @@
+# When issuing "go build" in the app/ folder, this executable comes forth:
+app/app
+
 config.yml
 go-app
 *.db
